@@ -29,11 +29,13 @@ import static org.junit.Assert.*;
 
 public class TransactionOutputTest extends TestWithWallet {
 
+    @Override
     @Before
     public void setUp() throws Exception {
         super.setUp();
     }
 
+    @Override
     @After
     public void tearDown() throws Exception {
         super.tearDown();
@@ -64,7 +66,7 @@ public class TransactionOutputTest extends TestWithWallet {
 
     @Test
     public void testP2SHOutputScript() throws Exception {
-        String P2SHAddressString = "35b9vsyH1KoFT5a5KtrKusaCcPLkiSo1tU";
+        String P2SHAddressString = "Ff2aK9TNye9z9Pv9pXbeqNSvW1FQSd4UBJ";
         Address P2SHAddress = Address.fromBase58(MainNetParams.get(), P2SHAddressString);
         Script script = ScriptBuilder.createOutputScript(P2SHAddress);
         Transaction tx = new Transaction(MainNetParams.get());

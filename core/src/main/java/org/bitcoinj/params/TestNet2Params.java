@@ -42,12 +42,14 @@ public class TestNet2Params extends AbstractBitcoinNetParams {
         maxTarget = Utils.decodeCompactBits(0x1d0fffffL);
         dumpedPrivateKeyHeader = 239;
         genesisBlock.setTime(1296688602L);
-        genesisBlock.setDifficultyTarget(0x1d07fff8L);
-        genesisBlock.setNonce(384568319);
+        /*genesisBlock.setDifficultyTarget(0x1d07fff8L);
+        genesisBlock.setNonce(384568319);*/
         spendableCoinbaseDepth = 100;
         subsidyDecreaseBlockCount = 210000;
         String genesisHash = genesisBlock.getHashAsString();
-        checkState(genesisHash.equals("00000007199508e34a9ff81e6ec0c477a4cccff2a4767a8eee39c11db367b008"));
+        if (!genesisHash.equals("6c0963d6c7172cf6ad5446a53d38ae779717579ec8d3dbed65b44a01068ae562"))
+            throw new RuntimeException(genesisHash);
+        checkState(genesisHash.equals("6c0963d6c7172cf6ad5446a53d38ae779717579ec8d3dbed65b44a01068ae562"));
         dnsSeeds = null;
         addrSeeds = null;
         bip32HeaderPub = 0x043587CF;

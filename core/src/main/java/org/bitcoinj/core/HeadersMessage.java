@@ -30,14 +30,14 @@ import java.util.List;
  * <p>A protocol message that contains a repeated series of block headers, sent in response to the "getheaders" command.
  * This is useful when you want to traverse the chain but know you don't care about the block contents, for example,
  * because you have a freshly created wallet with no keys.</p>
- * 
+ *
  * <p>Instances of this class are not safe for use by multiple threads.</p>
  */
 public class HeadersMessage extends Message {
     private static final Logger log = LoggerFactory.getLogger(HeadersMessage.class);
 
     // The main client will never send us more than this number of headers.
-    public static final int MAX_HEADERS = 2000;
+    public static final int MAX_HEADERS = 500;
 
     private List<Block> blockHeaders;
 
@@ -60,7 +60,7 @@ public class HeadersMessage extends Message {
         stream.write(new VarInt(blockHeaders.size()).encode());
         for (Block header : blockHeaders) {
             header.cloneAsHeader().bitcoinSerializeToStream(stream);
-            stream.write(0);
+            //stream.write(0);
         }
     }
 
@@ -77,7 +77,7 @@ public class HeadersMessage extends Message {
         for (int i = 0; i < numHeaders; ++i) {
             final Block newBlockHeader = serializer.makeBlock(payload, cursor, UNKNOWN_LENGTH);
             if (newBlockHeader.hasTransactions()) {
-                throw new ProtocolException("Block header does not end with a null byte");
+                throw new ProtocolException("Block header does contain transactions");
             }
             cursor += newBlockHeader.optimalEncodingMessageSize;
             blockHeaders.add(newBlockHeader);

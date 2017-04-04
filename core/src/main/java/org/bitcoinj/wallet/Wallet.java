@@ -122,8 +122,8 @@ import static com.google.common.base.Preconditions.*;
  * {@link Wallet#autosaveToFile(java.io.File, long, java.util.concurrent.TimeUnit, org.bitcoinj.wallet.WalletFiles.Listener)}
  * for more information about this.</p>
  */
-public class Wallet extends BaseTaggableObject
-    implements NewBestBlockListener, TransactionReceivedInBlockListener, PeerFilterProvider, KeyBag, TransactionBag, ReorganizeListener {
+public class Wallet extends BaseTaggableObject implements NewBestBlockListener, TransactionReceivedInBlockListener, PeerFilterProvider, KeyBag, TransactionBag,
+        ReorganizeListener, TransactionFeeChangedListener {
     private static final Logger log = LoggerFactory.getLogger(Wallet.class);
     private static final int MINIMUM_BLOOM_DATA_LENGTH = 8;
 
@@ -244,7 +244,7 @@ public class Wallet extends BaseTaggableObject
     private final HashMap<String, WalletExtension> extensions;
 
     // Objects that perform transaction signing. Applied subsequently one after another
-    @GuardedBy("lock") private List<TransactionSigner> signers;
+    @GuardedBy("lock") final List<TransactionSigner> signers;
 
     // If this is set then the wallet selects spendable candidate outputs from a UTXO provider.
     @Nullable private volatile UTXOProvider vUTXOProvider;
@@ -654,6 +654,7 @@ public class Wallet extends BaseTaggableObject
     /**
      * @deprecated use {@link #currentChangeAddress()} instead.
      */
+    @Deprecated
     public Address getChangeAddress() {
         return currentChangeAddress();
     }
@@ -816,7 +817,7 @@ public class Wallet extends BaseTaggableObject
     /**
      * Returns whether this wallet consists entirely of watching keys (unencrypted keys with no private part). Mixed
      * wallets are forbidden.
-     * 
+     *
      * @throws IllegalStateException
      *             if there are no keys, or if there is a mix between watching and non-watching keys.
      */
@@ -3537,7 +3538,7 @@ public class Wallet extends BaseTaggableObject
         public Coin value;
         public BalanceType type;
     }
-    @GuardedBy("lock") private List<BalanceFutureRequest> balanceFutureRequests = Lists.newLinkedList();
+    @GuardedBy("lock") final List<BalanceFutureRequest> balanceFutureRequests = Lists.newLinkedList();
 
     /**
      * <p>Returns a future that will complete when the balance of the given type has becom equal or larger to the given
@@ -4646,10 +4647,10 @@ public class Wallet extends BaseTaggableObject
      * <p>Gets a bloom filter that contains all of the public keys from this wallet, and which will provide the given
      * false-positive rate if it has size elements. Keep in mind that you will get 2 elements in the bloom filter for
      * each key in the wallet, for the public key and the hash of the public key (address form).</p>
-     * 
+     *
      * <p>This is used to generate a BloomFilter which can be {@link BloomFilter#merge(BloomFilter)}d with another.
      * It could also be used if you have a specific target for the filter's size.</p>
-     * 
+     *
      * <p>See the docs for {@link BloomFilter(int, double)} for a brief explanation of anonymity when using bloom
      * filters.</p>
      */
@@ -5271,4 +5272,16 @@ public class Wallet extends BaseTaggableObject
         }
     }
     //endregion
+
+    private Coin currentTransactionFee;
+
+    @Override
+    public void onTransactionFeeChanged(final Coin transactionFee) {
+        log.info("setting tx fee to {} in wallet", transactionFee.toFriendlyString());
+        this.currentTransactionFee = transactionFee;
+    }
+
+    public Coin getCurrentTransactionFee() {
+        return currentTransactionFee;
+    }
 }

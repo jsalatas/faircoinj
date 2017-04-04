@@ -454,6 +454,7 @@ public class Peer extends PeerSocketHandler {
     protected void processMessage(Message m) throws Exception {
         // Allow event listeners to filter the message stream. Listeners are allowed to drop messages by
         // returning null.
+
         for (ListenerRegistration<PreMessageReceivedEventListener> registration : preMessageReceivedEventListeners) {
             // Skip any listeners that are supposed to run in another thread as we don't want to block waiting
             // for it, which might cause circular deadlock.
@@ -510,11 +511,31 @@ public class Peer extends PeerSocketHandler {
             processVersionAck((VersionAck) m);
         } else if (m instanceof UTXOsMessage) {
             processUTXOMessage((UTXOsMessage) m);
+        } else if (m instanceof SendHeadersMessage) {
+
+        } else if (m instanceof NoncePoolMessage) {
+            processNoncePool((NoncePoolMessage)m);
+        } else if (m instanceof ChainSigMessage) {
+            processChainSignature((ChainSigMessage)m);
+        } else if (m instanceof ChainDataMessage) {
+            processChainData((ChainDataMessage)m);
         } else if (m instanceof RejectMessage) {
             log.error("{} {}: Received {}", this, getPeerVersionMessage().subVer, m);
         } else {
             log.warn("{}: Received unhandled message: {}", this, m);
         }
+    }
+
+    protected void processChainData(ChainDataMessage m) {
+
+    }
+
+    protected void processChainSignature(ChainSigMessage m) {
+
+    }
+
+    protected void processNoncePool(NoncePoolMessage m) {
+
     }
 
     protected void processUTXOMessage(UTXOsMessage m) {
@@ -1171,6 +1192,7 @@ public class Peer extends PeerSocketHandler {
         // Separate out the blocks and transactions, we'll handle them differently
         List<InventoryItem> transactions = new LinkedList<InventoryItem>();
         List<InventoryItem> blocks = new LinkedList<InventoryItem>();
+        List<InventoryItem> pocData = new LinkedList<InventoryItem>();
 
         for (InventoryItem item : items) {
             switch (item.type) {
@@ -1179,6 +1201,11 @@ public class Peer extends PeerSocketHandler {
                     break;
                 case Block:
                     blocks.add(item);
+                    break;
+                case CvnPubNoncePool:
+                case CvnSignature:
+                case PocChainData:
+                    pocData.add(item);
                     break;
                 default:
                     throw new IllegalStateException("Not implemented: " + item.type);
@@ -1227,6 +1254,13 @@ public class Peer extends PeerSocketHandler {
                 // Register with the garbage collector that we care about the confidence data for a while.
                 pendingTxDownloads.add(conf);
             }
+        }
+
+        it = pocData.iterator();
+        while (it.hasNext()) {
+            InventoryItem item = it.next();
+            log.debug("{}: getdata on type:{} {}", getAddress(), item.type, item.hash);
+            getdata.addItem(item);
         }
 
         // If we are requesting filteredblocks we have to send a ping after the getdata so that we have a clear

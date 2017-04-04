@@ -62,7 +62,7 @@ class NewBlock {
     }
     // Wrappers to make it more block-like
     public Sha256Hash getHash() { return block.getHash(); }
-    public void solve() { block.solve(); }
+    public void solve() { /* block.solve(); */ }
     public void addTransaction(Transaction tx) { block.addTransaction(tx); }
 
     public TransactionOutPointWithValue getCoinbaseOutput() {
@@ -907,7 +907,7 @@ public class FullBlockTestGenerator {
         Block b44 = new Block(params, Block.BLOCK_VERSION_GENESIS);
         byte[] outScriptBytes = ScriptBuilder.createOutputScript(ECKey.fromPublicOnly(coinbaseOutKeyPubKey)).getProgram();
         {
-            b44.setDifficultyTarget(b43.block.getDifficultyTarget());
+            //b44.setDifficultyTarget(b43.block.getDifficultyTarget());
             b44.addCoinbaseTransaction(coinbaseOutKeyPubKey, ZERO, chainHeadHeight + 15);
 
             Transaction t = new Transaction(params);
@@ -922,7 +922,7 @@ public class FullBlockTestGenerator {
             b44.setPrevBlockHash(b43.getHash());
             b44.setTime(b43.block.getTimeSeconds() + 1);
         }
-        b44.solve();
+        //b44.solve();
         blocks.add(new BlockAndValidity(b44, true, false, b44.getHash(), chainHeadHeight + 15, "b44"));
 
         TransactionOutPointWithValue out15 = spendableOutputs.poll();
@@ -930,7 +930,7 @@ public class FullBlockTestGenerator {
         // A block with a non-coinbase as the first tx
         Block b45 = new Block(params, Block.BLOCK_VERSION_GENESIS);
         {
-            b45.setDifficultyTarget(b44.getDifficultyTarget());
+            //b45.setDifficultyTarget(b44.getDifficultyTarget());
             //b45.addCoinbaseTransaction(pubKey, coinbaseValue);
 
             Transaction t = new Transaction(params);
@@ -950,38 +950,38 @@ public class FullBlockTestGenerator {
             b45.setPrevBlockHash(b44.getHash());
             b45.setTime(b44.getTimeSeconds() + 1);
         }
-        b45.solve();
+        //b45.solve();
         blocks.add(new BlockAndValidity(b45, false, true, b44.getHash(), chainHeadHeight + 15, "b45"));
 
         // A block with no txn
         Block b46 = new Block(params, Block.BLOCK_VERSION_GENESIS);
         {
             b46.transactions = new ArrayList<Transaction>();
-            b46.setDifficultyTarget(b44.getDifficultyTarget());
+            //b46.setDifficultyTarget(b44.getDifficultyTarget());
             b46.setMerkleRoot(Sha256Hash.ZERO_HASH);
 
             b46.setPrevBlockHash(b44.getHash());
             b46.setTime(b44.getTimeSeconds() + 1);
         }
-        b46.solve();
+        //b46.solve();
         blocks.add(new BlockAndValidity(b46, false, true, b44.getHash(), chainHeadHeight + 15, "b46"));
 
         // A block with invalid work
         NewBlock b47 = createNextBlock(b44, chainHeadHeight + 16, out15, null);
         {
-            try {
-                // Inverse solve
-                BigInteger target = b47.block.getDifficultyTargetAsInteger();
-                while (true) {
-                    BigInteger h = b47.getHash().toBigInteger();
-                    if (h.compareTo(target) > 0) // if invalid
-                        break;
-                    // increment the nonce and try again.
-                    b47.block.setNonce(b47.block.getNonce() + 1);
-                }
-            } catch (VerificationException e) {
-                throw new RuntimeException(e); // Cannot happen.
-            }
+//            try {
+//                // Inverse solve
+//                BigInteger target = b47.block.getDifficultyTargetAsInteger();
+//                while (true) {
+//                    BigInteger h = b47.getHash().toBigInteger();
+//                    if (h.compareTo(target) > 0) // if invalid
+//                        break;
+//                    // increment the nonce and try again.
+//                    b47.block.setNonce(b47.block.getNonce() + 1);
+//                }
+//            } catch (VerificationException e) {
+//                throw new RuntimeException(e); // Cannot happen.
+//            }
         }
         blocks.add(new BlockAndValidity(b47, false, true, b44.getHash(), chainHeadHeight + 15, "b47"));
 
@@ -1002,9 +1002,9 @@ public class FullBlockTestGenerator {
         // Block with incorrect POW limit
         NewBlock b50 = createNextBlock(b44, chainHeadHeight + 16, out15, null);
         {
-            long diffTarget = b44.getDifficultyTarget();
-            diffTarget &= 0xFFBFFFFF; // Make difficulty one bit harder
-            b50.block.setDifficultyTarget(diffTarget);
+            //long diffTarget = b44.getDifficultyTarget();
+            //diffTarget &= 0xFFBFFFFF; // Make difficulty one bit harder
+            //b50.block.setDifficultyTarget(diffTarget);
         }
         b50.solve();
         blocks.add(new BlockAndValidity(b50, false, true, b44.getHash(), chainHeadHeight + 15, "b50"));
@@ -1225,7 +1225,7 @@ public class FullBlockTestGenerator {
 
             byte[] varIntBytes = new byte[9];
             varIntBytes[0] = (byte) 255;
-            Utils.uint32ToByteArrayLE((long)b64Original.block.getTransactions().size(), varIntBytes, 1);
+            Utils.uint32ToByteArrayLE(b64Original.block.getTransactions().size(), varIntBytes, 1);
             Utils.uint32ToByteArrayLE(((long)b64Original.block.getTransactions().size()) >>> 32, varIntBytes, 5);
             stream.write(varIntBytes);
             checkState(new VarInt(varIntBytes, 0).value == b64Original.block.getTransactions().size());
@@ -1791,7 +1791,7 @@ public class FullBlockTestGenerator {
             t.addOutput(new TransactionOutput(params, t, SATOSHI, new byte[] {OP_1}));
             addOnlyInputToTransaction(t, prevOut);
             block.addTransaction(t);
-            block.solve();
+            //block.solve();
         }
         return new NewBlock(block, prevOut == null ? null : new TransactionOutPointWithValue(t, 1));
     }

@@ -112,7 +112,7 @@ public class ScriptTest {
 
     @Test
     public void testP2SHOutputScript() throws Exception {
-        Address p2shAddress = Address.fromBase58(MainNetParams.get(), "35b9vsyH1KoFT5a5KtrKusaCcPLkiSo1tU");
+        Address p2shAddress = Address.fromBase58(MainNetParams.get(), "Ff2aK9TNye9z9Pv9pXbeqNSvW1FQSd4UBJ");
         assertTrue(ScriptBuilder.createOutputScript(p2shAddress).isPayToScriptHash());
     }
 
@@ -122,7 +122,7 @@ public class ScriptTest {
         Script s = new Script(bytes);
         assertTrue(s.isSentToRawPubKey());
     }
-    
+
     @Test
     public void testCreateMultiSigInputScript() {
         // Setup transaction and signatures
@@ -235,7 +235,7 @@ public class ScriptTest {
 
     private Script parseScriptString(String string) throws IOException {
         String[] words = string.split("[ \\t\\n]");
-        
+
         UnsafeByteArrayOutputStream out = new UnsafeByteArrayOutputStream();
 
         for(String w : words) {
@@ -263,9 +263,9 @@ public class ScriptTest {
                 out.write(ScriptOpCodes.getOpCode(w.substring(3)));
             } else {
                 throw new RuntimeException("Invalid Data");
-            }                        
+            }
         }
-        
+
         return new Script(out.toByteArray());
     }
 
@@ -282,7 +282,7 @@ public class ScriptTest {
         }
         return flags;
     }
-    
+
     @Test
     public void dataDrivenValidScripts() throws Exception {
         JsonNode json = new ObjectMapper().readTree(new InputStreamReader(getClass().getResourceAsStream(
@@ -300,7 +300,7 @@ public class ScriptTest {
             }
         }
     }
-    
+
     @Test
     public void dataDrivenInvalidScripts() throws Exception {
         JsonNode json = new ObjectMapper().readTree(new InputStreamReader(getClass().getResourceAsStream(
@@ -319,7 +319,7 @@ public class ScriptTest {
             }
         }
     }
-    
+
     private Map<TransactionOutPoint, Script> parseScriptPubKeys(JsonNode inputs) throws IOException {
         Map<TransactionOutPoint, Script> scriptPubKeys = new HashMap<TransactionOutPoint, Script>();
         for (JsonNode input : inputs) {

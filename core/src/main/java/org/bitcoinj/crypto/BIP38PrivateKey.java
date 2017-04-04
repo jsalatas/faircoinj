@@ -129,6 +129,7 @@ public class BIP38PrivateKey extends VersionedChecksummedBytes {
                 decrypted[i] ^= derived[i];
             return ECKey.fromPrivate(decrypted, compressed);
         } catch (GeneralSecurityException x) {
+            x.printStackTrace();
             throw new RuntimeException(x);
         }
     }

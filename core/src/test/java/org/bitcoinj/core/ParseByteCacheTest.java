@@ -39,7 +39,7 @@ public class ParseByteCacheTest {
     private static final int BLOCK_HEIGHT_GENESIS = 0;
 
     private final byte[] txMessage = HEX.withSeparator(" ", 2).decode(
-            "f9 be b4 d9 74 78 00 00  00 00 00 00 00 00 00 00" +
+            "fa bf b5 da 74 78 00 00  00 00 00 00 00 00 00 00" +
             "02 01 00 00 e2 93 cd be  01 00 00 00 01 6d bd db" +
             "08 5b 1d 8a f7 51 84 f0  bc 01 fa d5 8d 12 66 e9" +
             "b6 3b 50 88 19 90 e4 b4  0d 6a ee 36 29 00 00 00" +
@@ -206,7 +206,7 @@ public class ParseByteCacheTest {
         bRef = (Block) bsRef.deserialize(ByteBuffer.wrap(blockBytes));
         
         // retrieve a value from header
-        b1.getDifficultyTarget();
+        b1.getCreatorId();
         
         // does it still match ref block?
         serDeser(bs, b1, bos.toByteArray(), null, null);
@@ -216,7 +216,7 @@ public class ParseByteCacheTest {
         bRef = (Block) bsRef.deserialize(ByteBuffer.wrap(blockBytes));
         
         // retrieve a value from a child and header
-        b1.getDifficultyTarget();
+        b1.getCreatorId();
 
         b1.getTransactions();
         if (b1.getTransactions().size() > 0) {
@@ -232,8 +232,8 @@ public class ParseByteCacheTest {
         bRef = (Block) bsRef.deserialize(ByteBuffer.wrap(blockBytes));
 
         // change a value in header
-        b1.setNonce(23);
-        bRef.setNonce(23);
+        b1.setCreatorId(23);
+        bRef.setCreatorId(23);
         assertFalse(b1.isHeaderBytesValid());
         assertEquals(retain , b1.isTransactionBytesValid());
         // does it still match ref block?

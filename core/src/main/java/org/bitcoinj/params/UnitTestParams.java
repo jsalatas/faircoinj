@@ -38,8 +38,8 @@ public class UnitTestParams extends AbstractBitcoinNetParams {
         acceptableAddressCodes = new int[] { addressHeader, p2shHeader };
         maxTarget = new BigInteger("00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
         genesisBlock.setTime(System.currentTimeMillis() / 1000);
-        genesisBlock.setDifficultyTarget(Block.EASIEST_DIFFICULTY_TARGET);
-        genesisBlock.solve();
+        /*genesisBlock.setDifficultyTarget(Block.EASIEST_DIFFICULTY_TARGET);
+        genesisBlock.solve();*/
         port = 18333;
         interval = 10;
         dumpedPrivateKeyHeader = 239;
@@ -50,6 +50,10 @@ public class UnitTestParams extends AbstractBitcoinNetParams {
         addrSeeds = null;
         bip32HeaderPub = 0x043587CF;
         bip32HeaderPriv = 0x04358394;
+
+        genesisBlock.setCreatorId(0xc001d00dL);
+        genesisBlock.setTime(1486481640L);
+        genesisBlock.setCreatorSignature(SchnorrSignature.wrap("5c450c4924f0a037c45ff4a6abe027306432ff7c652be7ef1dc00e63ec72547b862a8304af56f68c67cd5355e785cdce97d2472649347f7890c6fef2da5fa263"));
 
         majorityEnforceBlockUpgrade = 3;
         majorityRejectBlockOutdated = 4;

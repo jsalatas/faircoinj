@@ -33,7 +33,7 @@ public class SeedPeersTest {
         SeedPeers seedPeers = new SeedPeers(MainNetParams.get());
         assertThat(seedPeers.getPeer(), notNullValue());
     }
-    
+
     @Test
     public void getPeer_all() throws Exception{
         SeedPeers seedPeers = new SeedPeers(MainNetParams.get());
@@ -42,7 +42,7 @@ public class SeedPeersTest {
         }
         assertThat(seedPeers.getPeer(), equalTo(null));
     }
-    
+
     @Test
     public void getPeers_length() throws Exception{
         SeedPeers seedPeers = new SeedPeers(MainNetParams.get());

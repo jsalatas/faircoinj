@@ -211,19 +211,19 @@ public class BtcFormatTest {
     public void repeatingPlaceTest() {
         BtcFormat mega = BtcFormat.getInstance(-6, US);
         Coin value = MAX_MONEY.subtract(SATOSHI);
-        assertEquals("20.99999999999999", mega.format(value, 0, BtcFixedFormat.REPEATING_PLACES));
-        assertEquals("20.99999999999999", mega.format(value, 0, BtcFixedFormat.REPEATING_PLACES));
-        assertEquals("20.99999999999999", mega.format(value, 1, BtcFixedFormat.REPEATING_PLACES));
-        assertEquals("20.99999999999999", mega.format(value, 2, BtcFixedFormat.REPEATING_PLACES));
-        assertEquals("20.99999999999999", mega.format(value, 3, BtcFixedFormat.REPEATING_PLACES));
-        assertEquals("20.99999999999999", mega.format(value, 0, BtcFixedFormat.REPEATING_DOUBLETS));
-        assertEquals("20.99999999999999", mega.format(value, 1, BtcFixedFormat.REPEATING_DOUBLETS));
-        assertEquals("20.99999999999999", mega.format(value, 2, BtcFixedFormat.REPEATING_DOUBLETS));
-        assertEquals("20.99999999999999", mega.format(value, 3, BtcFixedFormat.REPEATING_DOUBLETS));
-        assertEquals("20.99999999999999", mega.format(value, 0, BtcFixedFormat.REPEATING_TRIPLETS));
-        assertEquals("20.99999999999999", mega.format(value, 1, BtcFixedFormat.REPEATING_TRIPLETS));
-        assertEquals("20.99999999999999", mega.format(value, 2, BtcFixedFormat.REPEATING_TRIPLETS));
-        assertEquals("20.99999999999999", mega.format(value, 3, BtcFixedFormat.REPEATING_TRIPLETS));
+        assertEquals("52.93522734653799", mega.format(value, 0, BtcFixedFormat.REPEATING_PLACES));
+        assertEquals("52.93522734653799", mega.format(value, 0, BtcFixedFormat.REPEATING_PLACES));
+        assertEquals("52.93522734653799", mega.format(value, 1, BtcFixedFormat.REPEATING_PLACES));
+        assertEquals("52.93522734653799", mega.format(value, 2, BtcFixedFormat.REPEATING_PLACES));
+        assertEquals("52.93522734653799", mega.format(value, 3, BtcFixedFormat.REPEATING_PLACES));
+        assertEquals("52.93522734653799", mega.format(value, 0, BtcFixedFormat.REPEATING_DOUBLETS));
+        assertEquals("52.93522734653799", mega.format(value, 1, BtcFixedFormat.REPEATING_DOUBLETS));
+        assertEquals("52.93522734653799", mega.format(value, 2, BtcFixedFormat.REPEATING_DOUBLETS));
+        assertEquals("52.93522734653799", mega.format(value, 3, BtcFixedFormat.REPEATING_DOUBLETS));
+        assertEquals("52.93522734653799", mega.format(value, 0, BtcFixedFormat.REPEATING_TRIPLETS));
+        assertEquals("52.93522734653799", mega.format(value, 1, BtcFixedFormat.REPEATING_TRIPLETS));
+        assertEquals("52.93522734653799", mega.format(value, 2, BtcFixedFormat.REPEATING_TRIPLETS));
+        assertEquals("52.93522734653799", mega.format(value, 3, BtcFixedFormat.REPEATING_TRIPLETS));
         assertEquals("1.00000005", BtcFormat.getCoinInstance(US).
                                    format(COIN.add(Coin.valueOf(5)), 0, BtcFixedFormat.REPEATING_PLACES));
     }
@@ -1149,8 +1149,8 @@ public class BtcFormatTest {
         assertEquals("11,223,344.5567", coinFormat.format(value, 4));
 
         BtcFormat megaFormat = BtcFormat.getInstance(-6, US);
-        assertEquals("21.00", megaFormat.format(MAX_MONEY));
-        assertEquals("21", megaFormat.format(MAX_MONEY, 0));
+        assertEquals("52.94", megaFormat.format(MAX_MONEY));
+        assertEquals("53", megaFormat.format(MAX_MONEY, 0));
         assertEquals("11.22334455667788", megaFormat.format(value, 0, REPEATING_DOUBLETS));
         assertEquals("11.223344556677", megaFormat.format(Coin.valueOf(1122334455667700l), 0, REPEATING_DOUBLETS));
         assertEquals("11.22334455667788", megaFormat.format(value, 0, REPEATING_TRIPLETS));

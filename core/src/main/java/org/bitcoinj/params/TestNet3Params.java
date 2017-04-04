@@ -17,51 +17,46 @@
 
 package org.bitcoinj.params;
 
-import java.math.BigInteger;
-import java.util.Date;
-
-import org.bitcoinj.core.Block;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.StoredBlock;
-import org.bitcoinj.core.Utils;
-import org.bitcoinj.core.VerificationException;
-import org.bitcoinj.store.BlockStore;
-import org.bitcoinj.store.BlockStoreException;
-
 import static com.google.common.base.Preconditions.checkState;
+
+import org.bitcoinj.core.SchnorrSignature;
+import org.bitcoinj.core.Sha256Hash;
+import org.bitcoinj.core.Utils;
 
 /**
  * Parameters for the testnet, a separate public instance of Bitcoin that has relaxed rules suitable for development
  * and testing of applications and new Bitcoin versions.
  */
 public class TestNet3Params extends AbstractBitcoinNetParams {
+
+
     public TestNet3Params() {
         super();
         id = ID_TESTNET;
-        // Genesis hash is 000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943
+        // Genesis hash is 84132bdf7f2c1f8193c721967aa9056b1e7ee1a0b56bcaf6985e51777b0407f7
         packetMagic = 0x0b110907;
         interval = INTERVAL;
         targetTimespan = TARGET_TIMESPAN;
         maxTarget = Utils.decodeCompactBits(0x1d00ffffL);
-        port = 18333;
         addressHeader = 111;
         p2shHeader = 196;
         acceptableAddressCodes = new int[] { addressHeader, p2shHeader };
         dumpedPrivateKeyHeader = 239;
-        genesisBlock.setTime(1296688602L);
-        genesisBlock.setDifficultyTarget(0x1d00ffffL);
-        genesisBlock.setNonce(414098458);
+        port = 41404;
+        genesisBlock.setCreatorId(0xc001d00dL);
+        genesisBlock.setTime(1489588001L);
+        genesisBlock.setHashPayload(Sha256Hash.wrap("60177a2d0dffb05df5b84eb90e8ed20554e043846c8fffc9a509d5a7d7224bb0"));
         spendableCoinbaseDepth = 100;
         subsidyDecreaseBlockCount = 210000;
         String genesisHash = genesisBlock.getHashAsString();
-        checkState(genesisHash.equals("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"));
-        alertSigningKey = Utils.HEX.decode("04302390343f91cc401d56d68b123028bf52e5fca1939df127f63c6467cdf9c8e2c14b61104cf817d0b780da337893ecc4aaff1309e536162dabbdb45200ca2b0a");
+
+        checkState(genesisHash.equals("84132bdf7f2c1f8193c721967aa9056b1e7ee1a0b56bcaf6985e51777b0407f7"));
+        alertSigningKey = Utils.HEX.decode("045894f38e9dd72b6f210c261d40003eb087030c42b102d3b238b396256d02f5a380ff3b7444d306d9e118fa1fc7b2b7594875f4eb64bbeaa31577391d85eb5a8a");
+
+        genesisBlock.setCreatorSignature(SchnorrSignature.wrap("37f9b6ac082d5a577c26f8b74b8ebff8638052a5325455caa88bb5350c5819bab06dc31909d6e1c4f75a4a7ad65ea957528d4a8464cf87eb127d05f75c6efafd"));
 
         dnsSeeds = new String[] {
-                "testnet-seed.bitcoin.jonasschnelli.ch", // Jonas Schnelli
-                "testnet-seed.bluematt.me",              // Matt Corallo
-                "testnet-seed.bitcoin.petertodd.org",    // Peter Todd
-                "testnet-seed.bitcoin.schildbach.de",    // Andreas Schildbach
+
         };
         addrSeeds = null;
         bip32HeaderPub = 0x043587CF;
@@ -83,40 +78,5 @@ public class TestNet3Params extends AbstractBitcoinNetParams {
     @Override
     public String getPaymentProtocolId() {
         return PAYMENT_PROTOCOL_ID_TESTNET;
-    }
-
-    // February 16th 2012
-    private static final Date testnetDiffDate = new Date(1329264000000L);
-
-    @Override
-    public void checkDifficultyTransitions(final StoredBlock storedPrev, final Block nextBlock,
-        final BlockStore blockStore) throws VerificationException, BlockStoreException {
-        if (!isDifficultyTransitionPoint(storedPrev) && nextBlock.getTime().after(testnetDiffDate)) {
-            Block prev = storedPrev.getHeader();
-
-            // After 15th February 2012 the rules on the testnet change to avoid people running up the difficulty
-            // and then leaving, making it too hard to mine a block. On non-difficulty transition points, easy
-            // blocks are allowed if there has been a span of 20 minutes without one.
-            final long timeDelta = nextBlock.getTimeSeconds() - prev.getTimeSeconds();
-            // There is an integer underflow bug in bitcoin-qt that means mindiff blocks are accepted when time
-            // goes backwards.
-            if (timeDelta >= 0 && timeDelta <= NetworkParameters.TARGET_SPACING * 2) {
-        	// Walk backwards until we find a block that doesn't have the easiest proof of work, then check
-        	// that difficulty is equal to that one.
-        	StoredBlock cursor = storedPrev;
-        	while (!cursor.getHeader().equals(getGenesisBlock()) &&
-                       cursor.getHeight() % getInterval() != 0 &&
-                       cursor.getHeader().getDifficultyTargetAsInteger().equals(getMaxTarget()))
-                    cursor = cursor.getPrev(blockStore);
-        	BigInteger cursorTarget = cursor.getHeader().getDifficultyTargetAsInteger();
-        	BigInteger newTarget = nextBlock.getDifficultyTargetAsInteger();
-        	if (!cursorTarget.equals(newTarget))
-                    throw new VerificationException("Testnet block transition that is not allowed: " +
-                	Long.toHexString(cursor.getHeader().getDifficultyTarget()) + " vs " +
-                	Long.toHexString(nextBlock.getDifficultyTarget()));
-            }
-        } else {
-            super.checkDifficultyTransitions(storedPrev, nextBlock, blockStore);
-        }
     }
 }

@@ -29,7 +29,10 @@ public class InventoryItem {
         Error,
         Transaction,
         Block,
-        FilteredBlock
+        FilteredBlock,
+        CvnPubNoncePool,
+        CvnSignature,
+        PocChainData
     }
 
     public final Type type;

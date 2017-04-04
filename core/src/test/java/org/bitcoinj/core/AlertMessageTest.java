@@ -17,15 +17,19 @@
 
 package org.bitcoinj.core;
 
-import org.bitcoinj.params.UnitTestParams;
-import org.junit.Before;
-import org.junit.Test;
-
 import static org.bitcoinj.core.Utils.HEX;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import org.bitcoinj.params.UnitTestParams;
+import org.junit.Before;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class AlertMessageTest {
+    private static final Logger log = LoggerFactory.getLogger(AlertMessageTest.class);
+
     private static final byte[] TEST_KEY_PRIV = HEX.decode("6421e091445ade4b24658e96aa60959ce800d8ea9e7bd8613335aa65ba8d840b");
     private NetworkParameters params;
 

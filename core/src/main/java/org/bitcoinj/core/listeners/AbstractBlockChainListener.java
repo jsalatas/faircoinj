@@ -40,4 +40,8 @@ public class AbstractBlockChainListener implements BlockChainListener {
     public boolean notifyTransactionIsInBlock(Sha256Hash txHash, StoredBlock block, BlockChain.NewBlockType blockType, int relativityOffset) throws VerificationException {
         return false;
     }
+
+    @Override
+    public void onTransactionFeeChanged(Coin transactionFee) {
+    }
 }

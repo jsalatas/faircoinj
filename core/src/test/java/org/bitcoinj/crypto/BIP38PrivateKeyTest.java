@@ -16,47 +16,48 @@
 
 package org.bitcoinj.crypto;
 
-import org.bitcoinj.core.ECKey;
-import org.bitcoinj.crypto.BIP38PrivateKey.BadPassphraseException;
-import org.bitcoinj.params.MainNetParams;
-import org.bitcoinj.params.TestNet3Params;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotSame;
+import org.bitcoinj.core.ECKey;
+import org.bitcoinj.crypto.BIP38PrivateKey.BadPassphraseException;
+import org.bitcoinj.params.MainNetParams;
+import org.bitcoinj.params.TestNet3Params;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BIP38PrivateKeyTest {
-
     private static final MainNetParams MAINNET = MainNetParams.get();
     private static final TestNet3Params TESTNET = TestNet3Params.get();
 
     @Test
     public void bip38testvector_noCompression_noEcMultiply_test1() throws Exception {
         BIP38PrivateKey encryptedKey = BIP38PrivateKey.fromBase58(MAINNET,
-                "6PRVWUbkzzsbcVac2qwfssoUJAN1Xhrg6bNk8J7Nzm5H7kxEbn2Nh2ZoGg");
+                "6PRSKDz63YbRcSjMXtNbw3MSvZ8HtyPza1MFq8oZobA8FoDx2bJ2pkgatS");
         ECKey key = encryptedKey.decrypt("TestingOneTwoThree");
-        assertEquals("5KN7MzqK5wt2TP1fQCYyHBtDrXdJuXbUzm4A9rKAteGu3Qi5CVR", key.getPrivateKeyEncoded(MAINNET)
+        assertEquals("8VGx9TpwRp95RjzCCpnrTk4otduMz112t7bi4LQwWKMord29ygn", key.getPrivateKeyEncoded(MAINNET)
                 .toString());
     }
 
     @Test
     public void bip38testvector_noCompression_noEcMultiply_test2() throws Exception {
         BIP38PrivateKey encryptedKey = BIP38PrivateKey.fromBase58(MAINNET,
-                "6PRNFFkZc2NZ6dJqFfhRoFNMR9Lnyj7dYGrzdgXXVMXcxoKTePPX1dWByq");
+                "6PRLX5bxYiXwZpfe1mzkBu5f17qEu3TceKhnxXAtQYCfaRr1nfLwW6VxbR");
         ECKey key = encryptedKey.decrypt("Satoshi");
-        assertEquals("5HtasZ6ofTHP6HCwTqTkLDuLQisYPah7aUnSKfC7h4hMUVw2gi5", key.getPrivateKeyEncoded(MAINNET)
+        assertEquals("8WPsLgTQE4HzZHqVD23ESLfwSUbXeMNsuoC65cSkUStpUbi7iDw", key.getPrivateKeyEncoded(MAINNET)
                 .toString());
     }
 
     @Test
     public void bip38testvector_noCompression_noEcMultiply_test3() throws Exception {
         BIP38PrivateKey encryptedKey = BIP38PrivateKey.fromBase58(MAINNET,
-                "6PRW5o9FLp4gJDDVqJQKJFTpMvdsSGJxMYHtHaQBF3ooa8mwD69bapcDQn");
+                "6PRSKDz63YbRcSjMXtNbw3MSvZ8HtyPza1MFq8oZobA8FoDx2bJ2pkgatS");
         StringBuilder passphrase = new StringBuilder();
         passphrase.appendCodePoint(0x03d2); // GREEK UPSILON WITH HOOK
         passphrase.appendCodePoint(0x0301); // COMBINING ACUTE ACCENT
@@ -64,7 +65,7 @@ public class BIP38PrivateKeyTest {
         passphrase.appendCodePoint(0x010400); // DESERET CAPITAL LETTER LONG I
         passphrase.appendCodePoint(0x01f4a9); // PILE OF POO
         ECKey key = encryptedKey.decrypt(passphrase.toString());
-        assertEquals("5Jajm8eQ22H3pGWLEVCXyvND8dQZhiQhoLJNKjYXk9roUFTMSZ4", key.getPrivateKeyEncoded(MAINNET)
+        assertEquals("8VGx9TpwRp95RjzCCpnrTk4otduMz112t7bi4LQwWKMord29ygn", key.getPrivateKeyEncoded(MAINNET)
                 .toString());
     }
 

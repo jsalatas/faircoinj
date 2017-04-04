@@ -40,7 +40,7 @@ import static org.bitcoinj.core.Sha256Hash.*;
  *
  * <p>To get a block, you can either build one from the raw bytes you can get from another implementation, or request one
  * specifically using {@link Peer#getBlock(Sha256Hash)}, or grab one from a downloaded {@link BlockChain}.</p>
- * 
+ *
  * <p>Instances of this class are not safe for use by multiple threads.</p>
  */
 public class Block extends Message {
@@ -56,7 +56,7 @@ public class Block extends Message {
     private static final Logger log = LoggerFactory.getLogger(Block.class);
 
     /** How many bytes are required to represent a block header WITHOUT the trailing 00 length byte. */
-    public static final int HEADER_SIZE = 80;
+    public static final int HEADER_SIZE = 108;
 
     static final long ALLOWED_TIME_DRIFT = 2 * 60 * 60; // Same value as Bitcoin Core.
 
@@ -73,40 +73,51 @@ public class Block extends Message {
      */
     public static final int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE / 50;
 
-    /** A value for difficultyTarget (nBits) that allows half of all possible hash solutions. Used in unit testing. */
-    public static final long EASIEST_DIFFICULTY_TARGET = 0x207fFFFFL;
-
     /** Value to use if the block height is unknown */
     public static final int BLOCK_HEIGHT_UNKNOWN = -1;
     /** Height of the first block */
     public static final int BLOCK_HEIGHT_GENESIS = 0;
 
-    public static final long BLOCK_VERSION_GENESIS = 1;
-    /** Block version introduced in BIP 34: Height in coinbase */
-    public static final long BLOCK_VERSION_BIP34 = 2;
-    /** Block version introduced in BIP 66: Strict DER signatures */
-    public static final long BLOCK_VERSION_BIP66 = 3;
-    /** Block version introduced in BIP 65: OP_CHECKLOCKTIMEVERIFY */
-    public static final long BLOCK_VERSION_BIP65 = 4;
+    public static final long               TX_PAYLOAD = 1 << 8;
+    public static final long              CVN_PAYLOAD = 1 << 9;
+    public static final long CHAIN_PARAMETERS_PAYLOAD = 1 << 10;
+    public static final long     CHAIN_ADMINS_PAYLOAD = 1 << 11;
+    public static final long      COIN_SUPPLY_PAYLOAD = 1 << 12;
+    public static final long       ADMIN_PAYLOAD_MASK = CVN_PAYLOAD | CHAIN_PARAMETERS_PAYLOAD | CHAIN_ADMINS_PAYLOAD | COIN_SUPPLY_PAYLOAD;
+    public static final long             PAYLOAD_MASK = TX_PAYLOAD | ADMIN_PAYLOAD_MASK;
+
+    public static final long    BLOCK_VERSION_GENESIS = 1 + (TX_PAYLOAD | CVN_PAYLOAD | CHAIN_PARAMETERS_PAYLOAD | CHAIN_ADMINS_PAYLOAD);
 
     // Fields defined as part of the protocol format.
     private long version;
     private Sha256Hash prevBlockHash;
     private Sha256Hash merkleRoot;
+    private Sha256Hash hashPayload;
     private long time;
-    private long difficultyTarget; // "nBits"
-    private long nonce;
+    private long creatorId;
 
     // TODO: Get rid of all the direct accesses to this field. It's a long-since unnecessary holdover from the Dalvik days.
     /** If null, it means this object holds only the headers. */
     @Nullable List<Transaction> transactions;
+
+    private SchnorrSignature chainMultiSig;
+    private Set<Long> missingSignerIds;
+
+    private SchnorrSignature adminMultiSig;
+    private Set<Long> adminIds;
+
+    private SchnorrSignature creatorSignature;
+    private List<CvnInfo> cvns;
+    private List<ChainAdmin> chainAdmins;
+
+    private DynamicChainParameters dynamicChainParams;
 
     /** Stores the hash of the block. If null, getHash() will recalculate it. */
     private Sha256Hash hash;
 
     protected boolean headerBytesValid;
     protected boolean transactionBytesValid;
-    
+
     // Blocks can be encoded in a way that will use more bytes than is optimal (due to VarInts having multiple encodings)
     // MAX_BLOCK_SIZE must be compared to the optimal encoding, not the actual encoding, so when parsing, we keep track
     // of the size of the ideal encoding in addition to the actual message size (which Message needs)
@@ -117,9 +128,10 @@ public class Block extends Message {
         super(params);
         // Set up a few basic things. We are not complete after this though.
         version = setVersion;
-        difficultyTarget = 0x1d07fff8L;
+        //difficultyTarget = 0x1d07fff8L;
         time = System.currentTimeMillis() / 1000;
         prevBlockHash = Sha256Hash.ZERO_HASH;
+        hashPayload = Sha256Hash.ZERO_HASH;
 
         length = HEADER_SIZE;
     }
@@ -192,17 +204,29 @@ public class Block extends Message {
      * @param nonce Arbitrary number to make the block hash lower than the target.
      * @param transactions List of transactions including the coinbase.
      */
-    public Block(NetworkParameters params, long version, Sha256Hash prevBlockHash, Sha256Hash merkleRoot, long time,
-                 long difficultyTarget, long nonce, List<Transaction> transactions) {
+    public Block(NetworkParameters params, long version, Sha256Hash prevBlockHash, Sha256Hash merkleRoot, Sha256Hash hashPayload, long time,
+                 long creatorId, List<Transaction> transactions, SchnorrSignature chainMultiSig, Set<Long> missingSignerIds, SchnorrSignature adminMultiSig,
+                 Set<Long> adminIds, SchnorrSignature creatorSignature, List<CvnInfo> cvns, List<ChainAdmin> chainAdmins, DynamicChainParameters dynamicChainParams) {
         super(params);
         this.version = version;
         this.prevBlockHash = prevBlockHash;
         this.merkleRoot = merkleRoot;
+        this.hashPayload = hashPayload;
         this.time = time;
-        this.difficultyTarget = difficultyTarget;
-        this.nonce = nonce;
+        this.creatorId = creatorId;
         this.transactions = new LinkedList<Transaction>();
         this.transactions.addAll(transactions);
+
+        this.chainMultiSig = chainMultiSig;
+        this.missingSignerIds.addAll(missingSignerIds);
+
+        this.adminMultiSig = adminMultiSig;
+        this.adminIds = adminIds;
+
+        this.creatorSignature = creatorSignature;
+        this.cvns.addAll(cvns);
+        this.chainAdmins.addAll(chainAdmins);
+        this.dynamicChainParams = dynamicChainParams;
     }
 
 
@@ -221,18 +245,20 @@ public class Block extends Message {
 
     /**
      * Parse transactions from the block.
-     * 
+     *
      * @param transactionsOffset Offset of the transactions within the block.
      * Useful for non-Bitcoin chains where the block header may not be a fixed
      * size.
      */
-    protected void parseTransactions(final int transactionsOffset) throws ProtocolException {
+    protected boolean parseTransactions(final int transactionsOffset) throws ProtocolException {
         cursor = transactionsOffset;
         optimalEncodingMessageSize = HEADER_SIZE;
-        if (payload.length == cursor) {
+
+        if (length == UNKNOWN_LENGTH || payload.length == cursor) {
             // This message is just a header, it has no transactions.
             transactionBytesValid = false;
-            return;
+            transactions = new ArrayList<Transaction>(0);
+            return false;
         }
 
         int numTransactions = (int) readVarInt();
@@ -247,6 +273,77 @@ public class Block extends Message {
             optimalEncodingMessageSize += tx.getOptimalEncodingMessageSize();
         }
         transactionBytesValid = serializer.isParseRetainMode();
+
+        return true;
+    }
+
+    protected void parseIds(boolean missingIds) throws ProtocolException {
+        int numIds = (int) readVarInt();
+
+        if (numIds == 0)
+            return;
+
+        for (int i = 0; i < numIds; i++) {
+            if (missingIds) {
+                missingSignerIds = new HashSet<>(numIds);
+                missingSignerIds.add(readUint32());
+            } else {
+                adminIds = new HashSet<>(numIds);
+                adminIds.add(readUint32());
+            }
+        }
+    }
+
+    protected void parseCvnInfo() throws ProtocolException {
+        int numEntries = (int) readVarInt();
+
+        if (numEntries == 0)
+            return;
+
+        cvns = new ArrayList<>(numEntries);
+        for (int i = 0; i < numEntries; i++) {
+            long nodeId = readUint32();
+            long heightAdded = readUint32();
+            SchnorrPublicKey pubKey = readPubKey();
+
+            cvns.add(new CvnInfo(nodeId, heightAdded, pubKey));
+        }
+    }
+
+    protected void parseChainAdmins() throws ProtocolException {
+        int numEntries = (int) readVarInt();
+
+        if (numEntries == 0)
+            return;
+
+        chainAdmins = new ArrayList<>(numEntries);
+        for (int i = 0; i < numEntries; i++) {
+            long adminId = readUint32();
+            long heightAdded = readUint32();
+            SchnorrPublicKey pubKey = readPubKey();
+
+            chainAdmins.add(new ChainAdmin(adminId, heightAdded, pubKey));
+        }
+    }
+
+    protected void parseChainParams() throws ProtocolException {
+        DynamicChainParameters p = new DynamicChainParameters();
+        p.setVersion(readUint32());
+        p.setMinAdminSigs(readUint32());
+        p.setMaxAdminSigs(readUint32());
+        p.setBlockSpacing(readUint32());
+        p.setBlockSpacingGracePeriod(readUint32());
+        p.setTransactionFee(readInt64());
+        p.setDustThreshold(readInt64());
+        p.setMinSuccessiveSignatures(readUint32());
+        p.setBlocksToConsiderForSigCheck(readUint32());
+        p.setPercentageOfSignaturesMean(readUint32());
+        p.setMaxBlockSize(readUint32());
+        p.setBlockPropagationWaitTime(readUint32());
+        p.setRetryNewSigSetInterval(readUint32());
+        p.setDescription(readStr());
+
+        dynamicChainParams = p;
     }
 
     @Override
@@ -256,17 +353,43 @@ public class Block extends Message {
         version = readUint32();
         prevBlockHash = readHash();
         merkleRoot = readHash();
+        hashPayload = readHash();
         time = readUint32();
-        difficultyTarget = readUint32();
-        nonce = readUint32();
+        creatorId = readUint32();
         hash = Sha256Hash.wrapReversed(Sha256Hash.hashTwice(payload, offset, cursor - offset));
         headerBytesValid = serializer.isParseRetainMode();
 
         // transactions
-        parseTransactions(offset + HEADER_SIZE);
+        if (!parseTransactions(offset + HEADER_SIZE) || transactions == null || transactions.isEmpty()) {
+            length = cursor - offset;
+            return;
+        }
+
+        chainMultiSig = readSignature();
+
+        // missing signer IDs
+        parseIds(true);
+
+        if (hasAdminPayload()) {
+            adminMultiSig = readSignature();
+            // included admin IDs
+            parseIds(false);
+        }
+
+        creatorSignature = readSignature();
+
+        if (hasCvnInfo())
+            parseCvnInfo();
+
+        if (hasChainAdmins())
+            parseChainAdmins();
+
+        if (hasChainParameters())
+            parseChainParams();
+
         length = cursor - offset;
     }
-    
+
     public int getOptimalEncodingMessageSize() {
         if (optimalEncodingMessageSize != 0)
             return optimalEncodingMessageSize;
@@ -285,9 +408,9 @@ public class Block extends Message {
         Utils.uint32ToByteStreamLE(version, stream);
         stream.write(prevBlockHash.getReversedBytes());
         stream.write(getMerkleRoot().getReversedBytes());
+        stream.write(hashPayload.getReversedBytes());
         Utils.uint32ToByteStreamLE(time, stream);
-        Utils.uint32ToByteStreamLE(difficultyTarget, stream);
-        Utils.uint32ToByteStreamLE(nonce, stream);
+        Utils.uint32ToByteStreamLE(creatorId, stream);
     }
 
     private void writeTransactions(OutputStream stream) throws IOException {
@@ -432,6 +555,72 @@ public class Block extends Message {
         return hash;
     }
 
+    public SchnorrSignature getChainMultiSig() {
+        return chainMultiSig;
+    }
+
+    public void setChainMultiSig(SchnorrSignature chainMultiSig) {
+        this.chainMultiSig = chainMultiSig;
+    }
+
+    public Set<Long> getMissingSignerIds() {
+        return missingSignerIds;
+    }
+
+    public void setMissingSignerIds(Set<Long> missingSignerIds) {
+        this.missingSignerIds = missingSignerIds;
+    }
+
+    public SchnorrSignature getAdminMultiSig() {
+        return adminMultiSig;
+    }
+
+    public void setAdminMultiSig(SchnorrSignature adminMultiSig) {
+        this.adminMultiSig = adminMultiSig;
+    }
+
+    public Set<Long> getAdminIds() {
+        return adminIds;
+    }
+
+    public void setAdminIds(Set<Long> adminIds) {
+        this.adminIds = adminIds;
+    }
+
+    public SchnorrSignature getCreatorSignature() {
+        return creatorSignature;
+    }
+
+    public void setCreatorSignature(SchnorrSignature creatorSignature) {
+        this.creatorSignature = creatorSignature;
+    }
+
+    public List<CvnInfo> getCvns() {
+        return cvns;
+    }
+
+    public void setCvns(List<CvnInfo> cvns) {
+        this.cvns = cvns;
+    }
+
+    public List<ChainAdmin> getChainAdmins() {
+        return chainAdmins;
+    }
+
+    public void setChainAdmins(List<ChainAdmin> chainAdmins) {
+        this.chainAdmins = chainAdmins;
+    }
+
+    public DynamicChainParameters getDynamicChainParams() {
+        return dynamicChainParams;
+    }
+
+    public void setDynamicChainParams(DynamicChainParameters dynamicChainParams) {
+        this.dynamicChainParams = dynamicChainParams;
+    }
+
+
+
     /**
      * The number that is one greater than the largest representable SHA-256
      * hash.
@@ -447,8 +636,7 @@ public class Block extends Message {
      * lower, the amount of work goes up.
      */
     public BigInteger getWork() throws VerificationException {
-        BigInteger target = getDifficultyTargetAsInteger();
-        return LARGEST_HASH.divide(target.add(BigInteger.ONE));
+        return BigInteger.valueOf(20 - (missingSignerIds != null ? missingSignerIds.size() : 0));
     }
 
     /** Returns a copy of the block, but without any transactions. */
@@ -460,14 +648,54 @@ public class Block extends Message {
 
     /** Copy the block without transactions into the provided empty block. */
     protected final void copyBitcoinHeaderTo(final Block block) {
-        block.nonce = nonce;
+        block.creatorId = creatorId;
         block.prevBlockHash = prevBlockHash;
         block.merkleRoot = getMerkleRoot();
+        block.hashPayload = hashPayload;
         block.version = version;
         block.time = time;
-        block.difficultyTarget = difficultyTarget;
         block.transactions = null;
         block.hash = getHash();
+    }
+
+    private String getPayloadString() {
+        StringBuilder s = new StringBuilder();
+
+        if ((version & TX_PAYLOAD) != 0)
+            s.append("tx");
+
+        if ((version & CVN_PAYLOAD) != 0)
+            s.append((s.length() > 0 ? "|" : "") +"cvninfo");
+
+        if ((version & CHAIN_PARAMETERS_PAYLOAD) != 0)
+            s.append((s.length() > 0 ? "|" : "") +"params");
+
+        if ((version & CHAIN_ADMINS_PAYLOAD) != 0)
+            s.append((s.length() > 0 ? "|" : "") +"admins");
+
+        if ((version & COIN_SUPPLY_PAYLOAD) != 0)
+            s.append((s.length() > 0 ? "|" : "") +"supply");
+
+        return s.toString();
+    }
+
+    private StringBuilder createIdList(Set<Long> ids, StringBuilder s) {
+        boolean first = true;
+
+        if (ids == null || ids.isEmpty()) {
+            s.append("none");
+            return s;
+        }
+
+        for (Long id : ids) {
+            if (first) {
+                first = false;
+            } else
+                s.append(',');
+            s.append(String.format("0x%08x", id));
+        }
+
+        return s;
     }
 
     /**
@@ -479,81 +707,47 @@ public class Block extends Message {
         StringBuilder s = new StringBuilder();
         s.append(" block: \n");
         s.append("   hash: ").append(getHashAsString()).append('\n');
-        s.append("   version: ").append(version);
-        String bips = Joiner.on(", ").skipNulls().join(isBIP34() ? "BIP34" : null, isBIP66() ? "BIP66" : null,
-                isBIP65() ? "BIP65" : null);
-        if (!bips.isEmpty())
-            s.append(" (").append(bips).append(')');
-        s.append('\n');
+        s.append("   version: ").append(version & 0xff).append(" (").append(getPayloadString()).append(')').append('\n');
         s.append("   previous block: ").append(getPrevBlockHash()).append("\n");
         s.append("   merkle root: ").append(getMerkleRoot()).append("\n");
+        s.append("   payload hash: ").append(getHashPayload()).append("\n");
         s.append("   time: ").append(time).append(" (").append(Utils.dateTimeFormat(time * 1000)).append(")\n");
-        s.append("   difficulty target (nBits): ").append(difficultyTarget).append("\n");
-        s.append("   nonce: ").append(nonce).append("\n");
-        if (transactions != null && transactions.size() > 0) {
+        s.append("   creator ID: ").append(String.format("0x%08x", creatorId)).append("\n");
+        s.append("   chain sig: ").append(chainMultiSig).append("\n");
+        s.append("   missing signers: "); createIdList(missingSignerIds, s).append("\n");
+        s.append("   creator sig: ").append(creatorSignature).append("\n");
+
+        if (hasAdminPayload()) {
+            s.append("   admin sig: ").append(adminMultiSig).append("\n");
+            s.append("   admin signers: "); createIdList(adminIds, s).append("\n");
+        }
+
+        if (hasCvnInfo() && cvns != null && cvns.size() > 0) {
+            s.append("   with ").append(cvns.size()).append(" cvninfo(s):\n");
+            for (CvnInfo ci : cvns) {
+                s.append(ci);
+            }
+        }
+
+        if (hasChainParameters()) {
+            s.append(dynamicChainParams);
+        }
+
+        if (hasChainAdmins() && chainAdmins != null && chainAdmins.size() > 0) {
+            s.append("   with ").append(chainAdmins.size()).append(" chain admins:\n");
+            for (ChainAdmin ca : chainAdmins) {
+                s.append(ca);
+            }
+        }
+
+        if (hasTx() && transactions != null && transactions.size() > 0) {
             s.append("   with ").append(transactions.size()).append(" transaction(s):\n");
             for (Transaction tx : transactions) {
                 s.append(tx);
             }
         }
+
         return s.toString();
-    }
-
-    /**
-     * <p>Finds a value of nonce that makes the blocks hash lower than the difficulty target. This is called mining, but
-     * solve() is far too slow to do real mining with. It exists only for unit testing purposes.
-     *
-     * <p>This can loop forever if a solution cannot be found solely by incrementing nonce. It doesn't change
-     * extraNonce.</p>
-     */
-    public void solve() {
-        while (true) {
-            try {
-                // Is our proof of work valid yet?
-                if (checkProofOfWork(false))
-                    return;
-                // No, so increment the nonce and try again.
-                setNonce(getNonce() + 1);
-            } catch (VerificationException e) {
-                throw new RuntimeException(e); // Cannot happen.
-            }
-        }
-    }
-
-    /**
-     * Returns the difficulty target as a 256 bit value that can be compared to a SHA-256 hash. Inside a block the
-     * target is represented using a compact form. If this form decodes to a value that is out of bounds, an exception
-     * is thrown.
-     */
-    public BigInteger getDifficultyTargetAsInteger() throws VerificationException {
-        BigInteger target = Utils.decodeCompactBits(difficultyTarget);
-        if (target.signum() <= 0 || target.compareTo(params.maxTarget) > 0)
-            throw new VerificationException("Difficulty target is bad: " + target.toString());
-        return target;
-    }
-
-    /** Returns true if the hash of the block is OK (lower than difficulty target). */
-    protected boolean checkProofOfWork(boolean throwException) throws VerificationException {
-        // This part is key - it is what proves the block was as difficult to make as it claims
-        // to be. Note however that in the context of this function, the block can claim to be
-        // as difficult as it wants to be .... if somebody was able to take control of our network
-        // connection and fork us onto a different chain, they could send us valid blocks with
-        // ridiculously easy difficulty and this function would accept them.
-        //
-        // To prevent this attack from being possible, elsewhere we check that the difficultyTarget
-        // field is of the right value. This requires us to have the preceeding blocks.
-        BigInteger target = getDifficultyTargetAsInteger();
-
-        BigInteger h = getHash().toBigInteger();
-        if (h.compareTo(target) > 0) {
-            // Proof of work check failed!
-            if (throwException)
-                throw new VerificationException("Hash is higher than target: " + getHashAsString() + " vs "
-                        + target.toString(16));
-            else
-                return false;
-        }
-        return true;
     }
 
     private void checkTimestamp() throws VerificationException {
@@ -677,7 +871,7 @@ public class Block extends Message {
         //
         // Firstly we need to ensure this block does in fact represent real work done. If the difficulty is high
         // enough, it's probably been done by the network.
-        checkProofOfWork(true);
+        //checkProofOfWork(true);
         checkTimestamp();
     }
 
@@ -791,6 +985,22 @@ public class Block extends Message {
         this.hash = null;
     }
 
+    public Sha256Hash getHashPayload() {
+        return hashPayload;
+    }
+
+    public void setHashPayload(Sha256Hash hashPayload) {
+        this.hashPayload = hashPayload;
+    }
+
+    public long getCreatorId() {
+        return creatorId;
+    }
+
+    public void setCreatorId(long creatorId) {
+        this.creatorId = creatorId;
+    }
+
     /**
      * Returns the time at which the block was solved and broadcast, according to the clock of the solving node. This
      * is measured in seconds since the UNIX epoch (midnight Jan 1st 1970).
@@ -812,41 +1022,6 @@ public class Block extends Message {
         this.hash = null;
     }
 
-    /**
-     * Returns the difficulty of the proof of work that this block should meet encoded <b>in compact form</b>. The {@link
-     * BlockChain} verifies that this is not too easy by looking at the length of the chain when the block is added.
-     * To find the actual value the hash should be compared against, use
-     * {@link org.bitcoinj.core.Block#getDifficultyTargetAsInteger()}. Note that this is <b>not</b> the same as
-     * the difficulty value reported by the Bitcoin "getdifficulty" RPC that you may see on various block explorers.
-     * That number is the result of applying a formula to the underlying difficulty to normalize the minimum to 1.
-     * Calculating the difficulty that way is currently unsupported.
-     */
-    public long getDifficultyTarget() {
-        return difficultyTarget;
-    }
-
-    /** Sets the difficulty target in compact form. */
-    public void setDifficultyTarget(long compactForm) {
-        unCacheHeader();
-        this.difficultyTarget = compactForm;
-        this.hash = null;
-    }
-
-    /**
-     * Returns the nonce, an arbitrary value that exists only to make the hash of the block header fall below the
-     * difficulty target.
-     */
-    public long getNonce() {
-        return nonce;
-    }
-
-    /** Sets the nonce and clears any cached data. */
-    public void setNonce(long nonce) {
-        unCacheHeader();
-        this.nonce = nonce;
-        this.hash = null;
-    }
-
     /** Returns an immutable list of transactions held in this block, or null if this object represents just a header. */
     @Nullable
     public List<Transaction> getTransactions() {
@@ -860,7 +1035,7 @@ public class Block extends Message {
     private static int txCounter;
 
     /** Adds a coinbase transaction to the block. This exists for unit tests.
-     * 
+     *
      * @param height block height, if known, or -1 otherwise.
      */
     @VisibleForTesting
@@ -906,7 +1081,7 @@ public class Block extends Message {
     /**
      * Returns a solved block that builds on top of this one. This exists for unit tests.
      * In this variant you can specify a public key (pubkey) for use in generating coinbase blocks.
-     * 
+     *
      * @param height block height, if known, or -1 otherwise.
      */
     Block createNextBlock(@Nullable final Address to, final long version,
@@ -914,7 +1089,7 @@ public class Block extends Message {
                           final byte[] pubKey, final Coin coinbaseValue,
                           final int height) {
         Block b = new Block(params, version);
-        b.setDifficultyTarget(difficultyTarget);
+        b.setCreatorId(creatorId);
         b.addCoinbaseTransaction(pubKey, coinbaseValue, height);
 
         if (to != null) {
@@ -944,7 +1119,7 @@ public class Block extends Message {
             b.setTime(getTimeSeconds() + 1);
         else
             b.setTime(time);
-        b.solve();
+        //b.solve();
         try {
             b.verifyHeader();
         } catch (VerificationException e) {
@@ -999,7 +1174,7 @@ public class Block extends Message {
 
     /**
      * Return whether this block contains any transactions.
-     * 
+     *
      * @return  true if the block contains transactions, false otherwise (is
      * purely a header).
      */
@@ -1007,27 +1182,27 @@ public class Block extends Message {
         return !this.transactions.isEmpty();
     }
 
-    /**
-     * Returns whether this block conforms to
-     * <a href="https://github.com/bitcoin/bips/blob/master/bip-0034.mediawiki">BIP34: Height in Coinbase</a>.
-     */
-    public boolean isBIP34() {
-        return version >= BLOCK_VERSION_BIP34;
-    }
+	public boolean hasCvnInfo() {
+		return (version & CVN_PAYLOAD) != 0;
+	}
 
-    /**
-     * Returns whether this block conforms to
-     * <a href="https://github.com/bitcoin/bips/blob/master/bip-0066.mediawiki">BIP66: Strict DER signatures</a>.
-     */
-    public boolean isBIP66() {
-        return version >= BLOCK_VERSION_BIP66;
-    }
+	public boolean hasChainParameters() {
+		return (version & CHAIN_PARAMETERS_PAYLOAD) != 0;
+	}
 
-    /**
-     * Returns whether this block conforms to
-     * <a href="https://github.com/bitcoin/bips/blob/master/bip-0065.mediawiki">BIP65: OP_CHECKLOCKTIMEVERIFY</a>.
-     */
-    public boolean isBIP65() {
-        return version >= BLOCK_VERSION_BIP65;
-    }
+	public boolean hasTx() {
+		return (version & TX_PAYLOAD) != 0;
+	}
+
+	public boolean hasChainAdmins() {
+		return (version & CHAIN_ADMINS_PAYLOAD) != 0;
+	}
+
+	public boolean hasCoinSupplyPayload() {
+		return (version & COIN_SUPPLY_PAYLOAD) != 0;
+	}
+
+	public boolean hasAdminPayload() {
+		return (version & ADMIN_PAYLOAD_MASK) != 0;
+	}
 }

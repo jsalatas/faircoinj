@@ -98,6 +98,15 @@ public abstract class ListMessage extends Message {
                 case 3:
                     type = InventoryItem.Type.FilteredBlock;
                     break;
+                case 4:
+                    type = InventoryItem.Type.CvnPubNoncePool;
+                    break;
+                case 5:
+                    type = InventoryItem.Type.CvnSignature;
+                    break;
+                case 6:
+                    type = InventoryItem.Type.PocChainData;
+                    break;
                 default:
                     throw new ProtocolException("Unknown CInv type: " + typeCode);
             }

@@ -1220,7 +1220,7 @@ public class Transaction extends ChildMessage {
         }
         for (int scriptIdx = 0; scriptIdx < expected.length; scriptIdx++) {
             if (actual[scriptIdx] != expected[scriptIdx]) {
-                throw new VerificationException.CoinbaseHeightMismatch("Block height mismatch in coinbase.");
+                throw new VerificationException.CoinbaseHeightMismatch("Block height mismatch in coinbase: " + toString());
             }
         }
     }

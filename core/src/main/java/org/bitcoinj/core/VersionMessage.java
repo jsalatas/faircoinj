@@ -26,13 +26,13 @@ import java.util.Locale;
 
 /**
  * <p>A VersionMessage holds information exchanged during connection setup with another peer. Most of the fields are not
- * particularly interesting. The subVer field, since BIP 14, acts as a User-Agent string would. You can and should 
+ * particularly interesting. The subVer field, since BIP 14, acts as a User-Agent string would. You can and should
  * append to or change the subVer for your own software so other implementations can identify it, and you can look at
  * the subVer field received from other nodes to see what they are running.</p>
  *
  * <p>After creating yourself a VersionMessage, you can pass it to {@link PeerGroup#setVersionMessage(VersionMessage)}
  * to ensure it will be used for each new connection.</p>
- * 
+ *
  * <p>Instances of this class are not safe for use by multiple threads.</p>
  */
 public class VersionMessage extends Message {
@@ -41,6 +41,10 @@ public class VersionMessage extends Message {
     public static final int NODE_NETWORK = 1;
     /** A flag that denotes whether the peer supports the getutxos message or not. */
     public static final int NODE_GETUTXOS = 2;
+
+    public static final int NODE_BLOOM = 4;
+
+    public static final int NODE_POC_DATA = 8;
 
     /**
      * The version number of the protocol spoken.
@@ -80,7 +84,7 @@ public class VersionMessage extends Message {
     /** The version of this library release, as a string. */
     public static final String BITCOINJ_VERSION = "0.14.4";
     /** The value that is prepended to the subVer field of this application. */
-    public static final String LIBRARY_SUBVER = "/bitcoinj:" + BITCOINJ_VERSION + "/";
+    public static final String LIBRARY_SUBVER = "/faircoinj:" + BITCOINJ_VERSION + "/";
 
     public VersionMessage(NetworkParameters params, byte[] payload) throws ProtocolException {
         super(params, payload, 0);
@@ -89,7 +93,7 @@ public class VersionMessage extends Message {
     // It doesn't really make sense to ever lazily parse a version message or to retain the backing bytes.
     // If you're receiving this on the wire you need to check the protocol version and it will never need to be sent
     // back down the wire.
-    
+
     public VersionMessage(NetworkParameters params, int newBestHeight) {
         super(params);
         clientVersion = params.getProtocolVersionNum(NetworkParameters.ProtocolVersion.CURRENT);
@@ -168,7 +172,7 @@ public class VersionMessage extends Message {
             throw new RuntimeException(e);  // Can't happen.
         }
         // Next up is the "local host nonce", this is to detect the case of connecting
-        // back to yourself. We don't care about this as we won't be accepting inbound 
+        // back to yourself. We don't care about this as we won't be accepting inbound
         // connections.
         Utils.uint32ToByteStreamLE(0, buf);
         Utils.uint32ToByteStreamLE(0, buf);

@@ -49,16 +49,16 @@ public abstract class NetworkParameters {
     /**
      * The alert signing key originally owned by Satoshi, and now passed on to Gavin along with a few others.
      */
-    public static final byte[] SATOSHI_KEY = Utils.HEX.decode("04fc9702847840aaf195de8442ebecedf5b095cdbb9bc716bda9110971b28a49e0ead8564ff0db22209e0374782c093bb899692d524e9d6a6956e7c5ecbcd68284");
+    public static final byte[] SATOSHI_KEY = Utils.HEX.decode("04b06af4982ca3edc2c040cc2cde05fa5b33264af4a98712ceb29d196e7390b4753eb7264dc5f383f29a44d63e70dbbd8d9e46a0a60f80ef62fd1911291ec388e4");
 
     /** The string returned by getId() for the main, production network where people trade things. */
-    public static final String ID_MAINNET = "org.bitcoin.production";
+    public static final String ID_MAINNET = "org.faircoin.production";
     /** The string returned by getId() for the testnet. */
-    public static final String ID_TESTNET = "org.bitcoin.test";
+    public static final String ID_TESTNET = "org.faircoin.test";
     /** The string returned by getId() for regtest mode. */
-    public static final String ID_REGTEST = "org.bitcoin.regtest";
+    public static final String ID_REGTEST = "org.faircoin.regtest";
     /** Unit test network. */
-    public static final String ID_UNITTESTNET = "org.bitcoinj.unittest";
+    public static final String ID_UNITTESTNET = "org.faircoinj.unittest";
 
     /** The string used by the payment protocol to represent the main net. */
     public static final String PAYMENT_PROTOCOL_ID_MAINNET = "main";
@@ -68,6 +68,8 @@ public abstract class NetworkParameters {
     public static final String PAYMENT_PROTOCOL_ID_UNIT_TESTS = "unittest";
     public static final String PAYMENT_PROTOCOL_ID_REGTEST = "regtest";
 
+    public static final long GENESIS_NODE_ID = 0xc001d00d;
+    public static final String GENESIS_MESSAGE = "FairCoin - the currency for a fair economy.";
     // TODO: Seed nodes should be here as well.
 
     protected Block genesisBlock;
@@ -99,7 +101,7 @@ public abstract class NetworkParameters {
      */
     protected int spendableCoinbaseDepth;
     protected int subsidyDecreaseBlockCount;
-    
+
     protected int[] acceptableAddressCodes;
     protected String[] dnsSeeds;
     protected int[] addrSeeds;
@@ -116,45 +118,56 @@ public abstract class NetworkParameters {
         Block genesisBlock = new Block(n, Block.BLOCK_VERSION_GENESIS);
         Transaction t = new Transaction(n);
         try {
-            // A script containing the difficulty bits and the following message:
-            //
-            //   "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
-            byte[] bytes = Utils.HEX.decode
-                    ("04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73");
-            t.addInput(new TransactionInput(n, t, bytes));
+            ByteArrayOutputStream scriptSigBytes = new ByteArrayOutputStream();
+
+            scriptSigBytes.write(ScriptOpCodes.OP_0);
+            scriptSigBytes.write(5);
+            scriptSigBytes.write((int) (GENESIS_NODE_ID & 0xff));
+            scriptSigBytes.write((int) (GENESIS_NODE_ID >> 8 & 0xff));
+            scriptSigBytes.write((int) (GENESIS_NODE_ID >> 16 & 0xff));
+            scriptSigBytes.write((int) (GENESIS_NODE_ID >> 24 & 0xff));
+            scriptSigBytes.write(0);
+            scriptSigBytes.write(ScriptOpCodes.OP_0);
+
+            t.addInput(new TransactionInput(n, t, scriptSigBytes.toByteArray()));
             ByteArrayOutputStream scriptPubKeyBytes = new ByteArrayOutputStream();
-            Script.writeBytes(scriptPubKeyBytes, Utils.HEX.decode
-                    ("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f"));
-            scriptPubKeyBytes.write(ScriptOpCodes.OP_CHECKSIG);
-            t.addOutput(new TransactionOutput(n, t, FIFTY_COINS, scriptPubKeyBytes.toByteArray()));
+
+            scriptPubKeyBytes.write(ScriptOpCodes.OP_RETURN);
+            scriptPubKeyBytes.write(GENESIS_MESSAGE.length());
+            scriptPubKeyBytes.write(GENESIS_MESSAGE.getBytes());
+
+            t.addOutput(new TransactionOutput(n, t, Coin.ZERO, scriptPubKeyBytes.toByteArray()));
         } catch (Exception e) {
             // Cannot happen.
             throw new RuntimeException(e);
         }
+
         genesisBlock.addTransaction(t);
+        genesisBlock.setHashPayload(Sha256Hash.wrap("1171a49db36313d2ee7ef8684a152a75f8913fb6b653bf42124046898d8b2713"));
         return genesisBlock;
     }
 
-    public static final int TARGET_TIMESPAN = 14 * 24 * 60 * 60;  // 2 weeks per difficulty cycle, on average.
+    public static final int TARGET_TIMESPAN = 1 * 24 * 60 * 60;  // 2 weeks per difficulty cycle, on average.
     public static final int TARGET_SPACING = 10 * 60;  // 10 minutes per block.
     public static final int INTERVAL = TARGET_TIMESPAN / TARGET_SPACING;
-    
+
     /**
      * Blocks with a timestamp after this should enforce BIP 16, aka "Pay to script hash". This BIP changed the
      * network rules in a soft-forking manner, that is, blocks that don't follow the rules are accepted but not
      * mined upon and thus will be quickly re-orged out as long as the majority are enforcing the rule.
      */
     public static final int BIP16_ENFORCE_TIME = 1333238400;
-    
+
     /**
      * The maximum number of coins to be generated
      */
+    @Deprecated
     public static final long MAX_COINS = 21000000;
 
     /**
      * The maximum money to be generated
      */
-    public static final Coin MAX_MONEY = COIN.multiply(MAX_COINS);
+    public static final Coin MAX_MONEY = Coin.valueOf(5293522734653800L);
 
     /** Alias for TestNet3Params.get(), use that instead. */
     @Deprecated
@@ -248,13 +261,6 @@ public abstract class NetworkParameters {
     public int getSpendableCoinbaseDepth() {
         return spendableCoinbaseDepth;
     }
-
-    /**
-     * Throws an exception if the block's difficulty is not correct.
-     *
-     * @throws VerificationException if the block's difficulty is not correct.
-     */
-    public abstract void checkDifficultyTransitions(StoredBlock storedPrev, Block next, final BlockStore blockStore) throws VerificationException, BlockStoreException;
 
     /**
      * Returns true if the block height is either not a checkpoint, or is a checkpoint and the hash matches.
@@ -422,7 +428,7 @@ public abstract class NetworkParameters {
 
     /**
      * Return the default serializer for this network. This is a shared serializer.
-     * @return 
+     * @return
      */
     public final MessageSerializer getDefaultSerializer() {
         // Construct a default serializer if we don't have one
@@ -477,7 +483,7 @@ public abstract class NetworkParameters {
      * The flags indicating which block validation tests should be applied to
      * the given block. Enables support for alternative blockchains which enable
      * tests based on different criteria.
-     * 
+     *
      * @param block block to determine flags for.
      * @param height height of the block, if known, null otherwise. Returned
      * tests should be a safe subset if block height is unknown.
@@ -486,12 +492,7 @@ public abstract class NetworkParameters {
             final VersionTally tally, final Integer height) {
         final EnumSet<Block.VerifyFlag> flags = EnumSet.noneOf(Block.VerifyFlag.class);
 
-        if (block.isBIP34()) {
-            final Integer count = tally.getCountAtOrAbove(Block.BLOCK_VERSION_BIP34);
-            if (null != count && count >= getMajorityEnforceBlockUpgrade()) {
-                flags.add(Block.VerifyFlag.HEIGHT_IN_COINBASE);
-            }
-        }
+        flags.add(Block.VerifyFlag.HEIGHT_IN_COINBASE);
         return flags;
     }
 
@@ -508,15 +509,8 @@ public abstract class NetworkParameters {
     public EnumSet<Script.VerifyFlag> getTransactionVerificationFlags(final Block block,
             final Transaction transaction, final VersionTally tally, final Integer height) {
         final EnumSet<Script.VerifyFlag> verifyFlags = EnumSet.noneOf(Script.VerifyFlag.class);
-        if (block.getTimeSeconds() >= NetworkParameters.BIP16_ENFORCE_TIME)
-            verifyFlags.add(Script.VerifyFlag.P2SH);
-
-        // Start enforcing CHECKLOCKTIMEVERIFY, (BIP65) for block.nVersion=4
-        // blocks, when 75% of the network has upgraded:
-        if (block.getVersion() >= Block.BLOCK_VERSION_BIP65 &&
-            tally.getCountAtOrAbove(Block.BLOCK_VERSION_BIP65) > this.getMajorityEnforceBlockUpgrade()) {
-            verifyFlags.add(Script.VerifyFlag.CHECKLOCKTIMEVERIFY);
-        }
+        verifyFlags.add(Script.VerifyFlag.P2SH);
+        verifyFlags.add(Script.VerifyFlag.CHECKLOCKTIMEVERIFY);
 
         return verifyFlags;
     }
@@ -524,10 +518,10 @@ public abstract class NetworkParameters {
     public abstract int getProtocolVersionNum(final ProtocolVersion version);
 
     public static enum ProtocolVersion {
-        MINIMUM(70000),
-        PONG(60001),
-        BLOOM_FILTER(70000),
-        CURRENT(70001);
+        MINIMUM(90204),
+        PONG(90204),
+        BLOOM_FILTER(90204),
+        CURRENT(90204);
 
         private final int bitcoinProtocol;
 
