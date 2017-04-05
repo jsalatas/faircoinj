@@ -68,7 +68,7 @@ public abstract class NetworkParameters {
     public static final String PAYMENT_PROTOCOL_ID_UNIT_TESTS = "unittest";
     public static final String PAYMENT_PROTOCOL_ID_REGTEST = "regtest";
 
-    public static final long GENESIS_NODE_ID = 0xc001d00d;
+    public static final long GENESIS_NODE_ID = 0xc001d00dL;
     public static final String GENESIS_MESSAGE = "FairCoin - the currency for a fair economy.";
     // TODO: Seed nodes should be here as well.
 
@@ -118,25 +118,21 @@ public abstract class NetworkParameters {
         Block genesisBlock = new Block(n, Block.BLOCK_VERSION_GENESIS);
         Transaction t = new Transaction(n);
         try {
-            ByteArrayOutputStream scriptSigBytes = new ByteArrayOutputStream();
+            ScriptBuilder b = new ScriptBuilder();
 
-            scriptSigBytes.write(ScriptOpCodes.OP_0);
-            scriptSigBytes.write(5);
-            scriptSigBytes.write((int) (GENESIS_NODE_ID & 0xff));
-            scriptSigBytes.write((int) (GENESIS_NODE_ID >> 8 & 0xff));
-            scriptSigBytes.write((int) (GENESIS_NODE_ID >> 16 & 0xff));
-            scriptSigBytes.write((int) (GENESIS_NODE_ID >> 24 & 0xff));
-            scriptSigBytes.write(0);
-            scriptSigBytes.write(ScriptOpCodes.OP_0);
+            b.addChunk(new ScriptChunk(ScriptOpCodes.OP_0, null));
+            b.number(GENESIS_NODE_ID);
+            b.addChunk(new ScriptChunk(ScriptOpCodes.OP_0, null));
+            Script script = b.build();
 
-            t.addInput(new TransactionInput(n, t, scriptSigBytes.toByteArray()));
-            ByteArrayOutputStream scriptPubKeyBytes = new ByteArrayOutputStream();
+            t.addInput(new TransactionInput(n, t, script.getProgram()));
 
-            scriptPubKeyBytes.write(ScriptOpCodes.OP_RETURN);
-            scriptPubKeyBytes.write(GENESIS_MESSAGE.length());
-            scriptPubKeyBytes.write(GENESIS_MESSAGE.getBytes());
+            b = new ScriptBuilder();
+            b.addChunk(new ScriptChunk(ScriptOpCodes.OP_RETURN, null));
+            b.data(GENESIS_MESSAGE.getBytes());
+            script = b.build();
 
-            t.addOutput(new TransactionOutput(n, t, Coin.ZERO, scriptPubKeyBytes.toByteArray()));
+            t.addOutput(new TransactionOutput(n, t, Coin.ZERO, script.getProgram()));
         } catch (Exception e) {
             // Cannot happen.
             throw new RuntimeException(e);
@@ -144,11 +140,12 @@ public abstract class NetworkParameters {
 
         genesisBlock.addTransaction(t);
         genesisBlock.setHashPayload(Sha256Hash.wrap("1171a49db36313d2ee7ef8684a152a75f8913fb6b653bf42124046898d8b2713"));
+
         return genesisBlock;
     }
 
-    public static final int TARGET_TIMESPAN = 1 * 24 * 60 * 60;  // 2 weeks per difficulty cycle, on average.
-    public static final int TARGET_SPACING = 10 * 60;  // 10 minutes per block.
+    public static final int TARGET_TIMESPAN = 14 * 24 * 60 * 60;  // 2 weeks per difficulty cycle, on average.
+    public static final int TARGET_SPACING = 3 * 60;  // 10 minutes per block.
     public static final int INTERVAL = TARGET_TIMESPAN / TARGET_SPACING;
 
     /**
@@ -157,12 +154,6 @@ public abstract class NetworkParameters {
      * mined upon and thus will be quickly re-orged out as long as the majority are enforcing the rule.
      */
     public static final int BIP16_ENFORCE_TIME = 1333238400;
-
-    /**
-     * The maximum number of coins to be generated
-     */
-    @Deprecated
-    public static final long MAX_COINS = 21000000;
 
     /**
      * The maximum money to be generated
