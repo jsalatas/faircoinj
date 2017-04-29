@@ -509,10 +509,10 @@ public abstract class NetworkParameters {
     public abstract int getProtocolVersionNum(final ProtocolVersion version);
 
     public static enum ProtocolVersion {
-        MINIMUM(90204),
-        PONG(90204),
-        BLOOM_FILTER(90204),
-        CURRENT(90204);
+        MINIMUM(90205),
+        PONG(90205),
+        BLOOM_FILTER(90205),
+        CURRENT(90205);
 
         private final int bitcoinProtocol;
 
