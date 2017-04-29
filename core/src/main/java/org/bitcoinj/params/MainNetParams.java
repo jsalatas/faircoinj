@@ -51,21 +51,21 @@ public class MainNetParams extends AbstractBitcoinNetParams {
         majorityWindow = MAINNET_MAJORITY_WINDOW;
 
         genesisBlock.setCreatorId(0xc001d00dL);
-        genesisBlock.setTime(1489588000L);
+        genesisBlock.setTime(1493456000L);
         id = ID_MAINNET;
         subsidyDecreaseBlockCount = 210000;
         spendableCoinbaseDepth = 100;
         String genesisHash = genesisBlock.getHashAsString();
-        checkState(genesisHash.equals("ca33d49e7839e50c96282fae0061656a512df510fff3e6da7303e9448bdcc55e"),
+        checkState(genesisHash.equals("50631d09b850ebeb9fd6e6b047d5fb3063498651297272639ebf57b594c5d336"),
                 genesisHash);
 
-        genesisBlock.setCreatorSignature(SchnorrSignature.wrap("0e663650757bd8306ecca6a572067e5d8eddc3108f934e416362de0475c6cd713da16d3735d80754b6dfe74281421b3517d2c2f923bddc43306dab6563a17bd5"));
+        genesisBlock.setCreatorSignature(SchnorrSignature.wrap("dc0781af888849fe24caa8c1e510f311cdcbb1d097fe1aadf2bed98e49a790a9f909201ec7bcf9e78612d820fd8448fac12854dc761282844fb219662edee972"));
 
         // This contains (at a minimum) the blocks which are not BIP30 compliant. BIP30 changed how duplicate
         // transactions are handled. Duplicated transactions could occur in the case where a coinbase had the same
         // extraNonce and the same outputs but appeared at different heights, and greatly complicated re-org handling.
         // Having these here simplifies block connection logic considerably.
-        checkpoints.put(1000, Sha256Hash.wrap("950af624ba845602404af4ebb67de0f0459e06f8399128c17c245c917871b905"));
+        checkpoints.put(88, Sha256Hash.wrap("d66386e8c89ae2eb433ad454ed47618edccfecb4aa56157715b372ed97215139"));
 
         dnsSeeds = new String[] {
                 "faircoin2-seed1.fair-coin.org" // Thomas König
