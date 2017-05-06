@@ -463,6 +463,12 @@ public class WalletProtobufSerializer {
         if (!walletProto.getNetworkIdentifier().equals(params.getId()))
             throw new UnreadableWalletException.WrongNetwork();
 
+        // detect FairCoin1 wallet
+        if (walletProto.getVersion() == 0) {
+            log.info("FairCoin1 wallet detected. Forcing upgrade");
+            forceReset = true;
+        }
+
         // Read the scrypt parameters that specify how encryption and decryption is performed.
         KeyChainGroup keyChainGroup;
         if (walletProto.hasEncryptionParameters()) {
@@ -546,7 +552,9 @@ public class WalletProtobufSerializer {
             }
         }
 
-        if (walletProto.hasVersion()) {
+        if (forceReset) {
+            wallet.setVersion(CURRENT_WALLET_VERSION);
+        } else if (walletProto.hasVersion()) {
             wallet.setVersion(walletProto.getVersion());
         }
 
