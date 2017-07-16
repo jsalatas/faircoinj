@@ -69,6 +69,7 @@ public abstract class NetworkParameters {
     public static final String PAYMENT_PROTOCOL_ID_REGTEST = "regtest";
 
     public static final long GENESIS_NODE_ID = 0xc001d00dL;
+    public static final long GENESIS_BLOCK_TIMESTAMP = 1499280000L;
     public static final String GENESIS_MESSAGE = "FairCoin - the currency for a fair economy.";
     // TODO: Seed nodes should be here as well.
 
@@ -139,7 +140,6 @@ public abstract class NetworkParameters {
         }
 
         genesisBlock.addTransaction(t);
-        genesisBlock.setHashPayload(Sha256Hash.wrap("1171a49db36313d2ee7ef8684a152a75f8913fb6b653bf42124046898d8b2713"));
 
         return genesisBlock;
     }

@@ -43,17 +43,17 @@ public class TestNet3Params extends AbstractBitcoinNetParams {
         acceptableAddressCodes = new int[] { addressHeader, p2shHeader };
         dumpedPrivateKeyHeader = 239;
         port = 41404;
-        genesisBlock.setCreatorId(0xc001d00dL);
-        genesisBlock.setTime(1493456001L);
-        genesisBlock.setHashPayload(Sha256Hash.wrap("332ef9fee6186c31d30599c832ed14820c584d843e962f60399c20e75690725f"));
+        genesisBlock.setCreatorId(GENESIS_NODE_ID);
+        genesisBlock.setTime(GENESIS_BLOCK_TIMESTAMP + 1);
+        genesisBlock.setHashPayload(Sha256Hash.wrap("15f0f2938adb409dfebbb05de45effb9a3e89b453696dbf883f14c0eb49108e6"));
         spendableCoinbaseDepth = 100;
         subsidyDecreaseBlockCount = 210000;
         String genesisHash = genesisBlock.getHashAsString();
 
-        checkState(genesisHash.equals("9eaf9d5e1b4c9e2b1f9908009f46394ce6ef9cae6ed0522a710cdc40b44e2b17"));
+        checkState(genesisHash.equals("70a7ffe235e918e4ee13dd1c66131839ea4aed82f9f4170ecac585ba08b88d48"));
         alertSigningKey = Utils.HEX.decode("045894f38e9dd72b6f210c261d40003eb087030c42b102d3b238b396256d02f5a380ff3b7444d306d9e118fa1fc7b2b7594875f4eb64bbeaa31577391d85eb5a8a");
 
-        genesisBlock.setCreatorSignature(SchnorrSignature.wrap("bbe18aea45eb5b2cb2f091655ddda6d6d439e6648ed1d50017f03254b4518279d8a30bf3d0be24513b0099d0c0b48d95086ffd382819b1364e1f821a83c74b97"));
+        genesisBlock.setCreatorSignature(SchnorrSignature.wrap("7abd47628463bffd1476bc3934d29dd3cf0dddfc022eea03946b5215814ab7602470185fc462a177f0f21352254a10932a5e4f5d323c166a56d63030cd6e5dcb"));
 
         dnsSeeds = new String[] {
 

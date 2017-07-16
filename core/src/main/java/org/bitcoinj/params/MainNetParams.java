@@ -50,22 +50,24 @@ public class MainNetParams extends AbstractBitcoinNetParams {
         majorityRejectBlockOutdated = MAINNET_MAJORITY_REJECT_BLOCK_OUTDATED;
         majorityWindow = MAINNET_MAJORITY_WINDOW;
 
-        genesisBlock.setCreatorId(0xc001d00dL);
-        genesisBlock.setTime(1493456000L);
+        genesisBlock.setCreatorId(GENESIS_NODE_ID);
+        genesisBlock.setTime(GENESIS_BLOCK_TIMESTAMP);
+        genesisBlock.setHashPayload(Sha256Hash.wrap("9ad1be60c7d8cbca7f16d26e56a0d1a243de8ac0538315496bcb77e6b436ee17"));
+
         id = ID_MAINNET;
         subsidyDecreaseBlockCount = 210000;
         spendableCoinbaseDepth = 100;
         String genesisHash = genesisBlock.getHashAsString();
-        checkState(genesisHash.equals("50631d09b850ebeb9fd6e6b047d5fb3063498651297272639ebf57b594c5d336"),
+        checkState(genesisHash.equals("6315c9cf4f562fa201e52c32f7bb77c1c50271cb973e0ea4a1ecc380dd6eed90"),
                 genesisHash);
 
-        genesisBlock.setCreatorSignature(SchnorrSignature.wrap("dc0781af888849fe24caa8c1e510f311cdcbb1d097fe1aadf2bed98e49a790a9f909201ec7bcf9e78612d820fd8448fac12854dc761282844fb219662edee972"));
+        genesisBlock.setCreatorSignature(SchnorrSignature.wrap("4ab1c3096f50f518ea4e48fb065fe53626b91360dab617d77279cea0b524966a94c0fd48af816ebe50a917b6fc2a25429672eae08510db4b81b2e4cbd9408b9d"));
 
         // This contains (at a minimum) the blocks which are not BIP30 compliant. BIP30 changed how duplicate
         // transactions are handled. Duplicated transactions could occur in the case where a coinbase had the same
         // extraNonce and the same outputs but appeared at different heights, and greatly complicated re-org handling.
         // Having these here simplifies block connection logic considerably.
-        checkpoints.put(88, Sha256Hash.wrap("d66386e8c89ae2eb433ad454ed47618edccfecb4aa56157715b372ed97215139"));
+        checkpoints.put(100, Sha256Hash.wrap("fdcc0c76c009f4088b4d79c9743e53f9844f27f9206aa391b0ab16cd38981465"));
 
         dnsSeeds = new String[] {
                 "faircoin2-seed1.fair-coin.org" // Thomas König
