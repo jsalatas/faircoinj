@@ -57,8 +57,8 @@ public class RegTestParams extends TestNet2Params {
                 genesis = super.getGenesisBlock();
                 /*genesis.setNonce(2);
                 genesis.setDifficultyTarget(0x207fFFFFL);*/
-                genesis.setTime(1296688602L);
-                checkState(genesis.getHashAsString().toLowerCase().equals("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
+                genesis.setTime(GENESIS_BLOCK_TIMESTAMP + 2);
+                checkState(genesis.getHashAsString().toLowerCase().equals("c69948f41cf0f402dc3ce9513416d0444cc025bbf1ade86c7704e8506ab54b40"));
             }
             return genesis;
         }

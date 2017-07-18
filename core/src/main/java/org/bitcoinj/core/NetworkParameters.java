@@ -69,7 +69,7 @@ public abstract class NetworkParameters {
     public static final String PAYMENT_PROTOCOL_ID_REGTEST = "regtest";
 
     public static final long GENESIS_NODE_ID = 0xc001d00dL;
-    public static final long GENESIS_BLOCK_TIMESTAMP = 1499280000L;
+    public static final long GENESIS_BLOCK_TIMESTAMP = 1500364800L;
     public static final String GENESIS_MESSAGE = "FairCoin - the currency for a fair economy.";
     // TODO: Seed nodes should be here as well.
 
@@ -509,10 +509,10 @@ public abstract class NetworkParameters {
     public abstract int getProtocolVersionNum(final ProtocolVersion version);
 
     public static enum ProtocolVersion {
-        MINIMUM(90206),
-        PONG(90206),
-        BLOOM_FILTER(90206),
-        CURRENT(90206);
+        MINIMUM(92000),
+        PONG(92000),
+        BLOOM_FILTER(92000),
+        CURRENT(92000);
 
         private final int bitcoinProtocol;
 

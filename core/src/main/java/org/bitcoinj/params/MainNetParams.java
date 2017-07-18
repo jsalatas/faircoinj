@@ -52,25 +52,26 @@ public class MainNetParams extends AbstractBitcoinNetParams {
 
         genesisBlock.setCreatorId(GENESIS_NODE_ID);
         genesisBlock.setTime(GENESIS_BLOCK_TIMESTAMP);
-        genesisBlock.setHashPayload(Sha256Hash.wrap("9ad1be60c7d8cbca7f16d26e56a0d1a243de8ac0538315496bcb77e6b436ee17"));
+        genesisBlock.setHashPayload(Sha256Hash.wrap("2b7ab86ef7189614d4bccb2576bffe834b7c0e6d3fd63539ea9fbbca45d26c0e"));
 
         id = ID_MAINNET;
         subsidyDecreaseBlockCount = 210000;
         spendableCoinbaseDepth = 100;
         String genesisHash = genesisBlock.getHashAsString();
-        checkState(genesisHash.equals("6315c9cf4f562fa201e52c32f7bb77c1c50271cb973e0ea4a1ecc380dd6eed90"),
+        checkState(genesisHash.equals("beed44fa5e96150d95d56ebd5d2625781825a9407a5215dd7eda723373a0a1d7"),
                 genesisHash);
 
-        genesisBlock.setCreatorSignature(SchnorrSignature.wrap("4ab1c3096f50f518ea4e48fb065fe53626b91360dab617d77279cea0b524966a94c0fd48af816ebe50a917b6fc2a25429672eae08510db4b81b2e4cbd9408b9d"));
+        genesisBlock.setCreatorSignature(SchnorrSignature.wrap("ced5d4d4f5967b80ca774324a5d9ab0569ec1f1608dfef6c1e439094dc3467d50b2116fa02f3e89753033e94628668298f61b43df046881c9312f3bccde46a3f"));
 
         // This contains (at a minimum) the blocks which are not BIP30 compliant. BIP30 changed how duplicate
         // transactions are handled. Duplicated transactions could occur in the case where a coinbase had the same
         // extraNonce and the same outputs but appeared at different heights, and greatly complicated re-org handling.
         // Having these here simplifies block connection logic considerably.
-        checkpoints.put(100, Sha256Hash.wrap("fdcc0c76c009f4088b4d79c9743e53f9844f27f9206aa391b0ab16cd38981465"));
+        checkpoints.put(72, Sha256Hash.wrap("1441d44cdbe0d152075cefdba665ee6cfad6e210d908a31cecd1ce99e394554b"));
 
         dnsSeeds = new String[] {
-                "faircoin2-seed1.fair-coin.org" // Thomas König
+                "faircoin2-seed1.fair-coin.org", // Thomas König
+                "faircoin2-seed2.fair-coin.org"  // Thomas König
         };
         httpSeeds = new HttpDiscovery.Details[] {
                 // Andreas Schildbach
