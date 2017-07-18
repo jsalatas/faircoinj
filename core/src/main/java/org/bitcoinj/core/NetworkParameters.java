@@ -158,7 +158,7 @@ public abstract class NetworkParameters {
     /**
      * The maximum money to be generated
      */
-    public static final Coin MAX_MONEY = Coin.valueOf(5293522734653800L);
+    public static final Coin MAX_MONEY = Coin.valueOf(5330000000000000L);
 
     /** Alias for TestNet3Params.get(), use that instead. */
     @Deprecated

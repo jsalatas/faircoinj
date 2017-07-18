@@ -586,7 +586,6 @@ public abstract class AbstractBlockChain {
                         }
                     });
                 }
-
             }
         }
 

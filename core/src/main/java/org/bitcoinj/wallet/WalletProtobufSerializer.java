@@ -464,9 +464,11 @@ public class WalletProtobufSerializer {
             throw new UnreadableWalletException.WrongNetwork();
 
         // detect FairCoin1 wallet
+        boolean fairCoin1Upgrade = false;
         if (walletProto.getVersion() == 0) {
             log.info("FairCoin1 wallet detected. Forcing upgrade");
             forceReset = true;
+            fairCoin1Upgrade = true;
         }
 
         // Read the scrypt parameters that specify how encryption and decryption is performed.
@@ -503,6 +505,9 @@ public class WalletProtobufSerializer {
             wallet.setLastBlockSeenHash(null);
             wallet.setLastBlockSeenHeight(-1);
             wallet.setLastBlockSeenTimeSecs(0);
+            if (fairCoin1Upgrade) {
+                wallet.setFairCoin1Upgrade(true);
+            }
         } else {
             // Read all transactions and insert into the txMap.
             for (Protos.Transaction txProto : walletProto.getTransactionList()) {

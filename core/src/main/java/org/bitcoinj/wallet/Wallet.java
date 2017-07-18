@@ -330,6 +330,7 @@ public class Wallet extends BaseTaggableObject implements NewBestBlockListener, 
         signers = new ArrayList<TransactionSigner>();
         addTransactionSigner(new LocalTransactionSigner());
         createTransientState();
+        fairCoin1Upgrade = false;
     }
 
     private void createTransientState() {
@@ -5274,6 +5275,7 @@ public class Wallet extends BaseTaggableObject implements NewBestBlockListener, 
     //endregion
 
     private Coin currentTransactionFee;
+    private boolean fairCoin1Upgrade;
 
     @Override
     public void onTransactionFeeChanged(final Coin transactionFee) {
@@ -5283,5 +5285,13 @@ public class Wallet extends BaseTaggableObject implements NewBestBlockListener, 
 
     public Coin getCurrentTransactionFee() {
         return currentTransactionFee;
+    }
+
+    public boolean isFairCoin1Upgrade() {
+        return fairCoin1Upgrade;
+    }
+
+    public void setFairCoin1Upgrade(boolean fairCoin1Upgrade) {
+        this.fairCoin1Upgrade = fairCoin1Upgrade;
     }
 }
