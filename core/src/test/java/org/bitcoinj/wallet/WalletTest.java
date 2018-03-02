@@ -2429,6 +2429,27 @@ public class WalletTest extends TestWithWallet {
     }
 
     @Test
+    public void fairCoinMandatoryFeeTest() throws Exception {
+        sendMoneyToWallet(AbstractBlockChain.NewBlockType.BEST_CHAIN, COIN);
+
+        SendRequest request = SendRequest.to(OTHER_ADDRESS, CENT);
+        for (int i = 0; i < 45; i++)
+            request.tx.addOutput(CENT.multiply(2), OTHER_ADDRESS);
+
+        request.tx.addOutput(Coin.valueOf(436800), OTHER_ADDRESS);
+
+        assertTrue(request.tx.unsafeBitcoinSerialize().length > 1000);
+        request.feePerKb = Transaction.DEFAULT_TX_FEE;
+        request.ensureMinRequiredFee = true;
+
+        TransactionOutput output = request.tx.getOutput(request.tx.getOutputs().size() - 1);
+
+        assertEquals(Coin.valueOf(436800), output.getMinNonDustValue());
+
+        wallet.completeTx(request);
+    }
+
+    @Test
     public void feeSolverAndCoinSelectionTests2() throws Exception {
         Transaction tx5 = sendMoneyToWallet(AbstractBlockChain.NewBlockType.BEST_CHAIN, CENT);
         sendMoneyToWallet(AbstractBlockChain.NewBlockType.BEST_CHAIN, COIN);

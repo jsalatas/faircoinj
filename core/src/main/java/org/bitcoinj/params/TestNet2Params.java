@@ -16,6 +16,7 @@
 
 package org.bitcoinj.params;
 
+import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Utils;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -41,15 +42,20 @@ public class TestNet2Params extends AbstractBitcoinNetParams {
         targetTimespan = TARGET_TIMESPAN;
         maxTarget = Utils.decodeCompactBits(0x1d0fffffL);
         dumpedPrivateKeyHeader = 239;
-        genesisBlock.setTime(1296688602L);
         /*genesisBlock.setDifficultyTarget(0x1d07fff8L);
         genesisBlock.setNonce(384568319);*/
         spendableCoinbaseDepth = 100;
         subsidyDecreaseBlockCount = 210000;
+
+        genesisBlock.setCreatorId(GENESIS_NODE_ID);
+        genesisBlock.setTime(GENESIS_BLOCK_TIMESTAMP + 2);
+        genesisBlock.setHashPayload(Sha256Hash.wrap("10f08b71d33acab5031e62f2d6987398567e04988ed5810a893f12a72f3f5193"));
+
+        System.out.println(genesisBlock);
         String genesisHash = genesisBlock.getHashAsString();
-        if (!genesisHash.equals("6c0963d6c7172cf6ad5446a53d38ae779717579ec8d3dbed65b44a01068ae562"))
+        if (!genesisHash.equals("335a7133066fe45cc6b1b7d48a5b589153bec2df38c069caf6c05a96f2ec0b76"))
             throw new RuntimeException(genesisHash);
-        checkState(genesisHash.equals("6c0963d6c7172cf6ad5446a53d38ae779717579ec8d3dbed65b44a01068ae562"));
+        checkState(genesisHash.equals("335a7133066fe45cc6b1b7d48a5b589153bec2df38c069caf6c05a96f2ec0b76"));
         dnsSeeds = null;
         addrSeeds = null;
         bip32HeaderPub = 0x043587CF;
