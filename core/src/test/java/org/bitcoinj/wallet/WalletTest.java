@@ -2440,7 +2440,6 @@ public class WalletTest extends TestWithWallet {
 
         assertTrue(request.tx.unsafeBitcoinSerialize().length > 1000);
         request.feePerKb = Transaction.DEFAULT_TX_FEE;
-        request.ensureMinRequiredFee = true;
 
         TransactionOutput output = request.tx.getOutput(request.tx.getOutputs().size() - 1);
 

@@ -44,7 +44,7 @@ public class Context {
     private TxConfidenceTable confidenceTable;
     private NetworkParameters params;
     private int eventHorizon = 100;
-    private boolean ensureMinRequiredFee = true;
+    private boolean ensureMinRequiredFee = false;
     private Coin feePerKb = Transaction.DEFAULT_TX_FEE;
 
     /**
