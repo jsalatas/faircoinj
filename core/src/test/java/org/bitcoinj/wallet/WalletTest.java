@@ -48,6 +48,7 @@ import org.bitcoinj.utils.ExchangeRate;
 import org.bitcoinj.utils.Fiat;
 import org.bitcoinj.utils.Threading;
 import org.bitcoinj.wallet.Wallet.BalanceType;
+import org.bitcoinj.wallet.Wallet.DustySendRequested;
 import org.bitcoinj.wallet.WalletTransaction.Pool;
 import org.bitcoinj.wallet.listeners.KeyChainEventListener;
 import org.bitcoinj.wallet.listeners.WalletChangeEventListener;
@@ -2433,10 +2434,9 @@ public class WalletTest extends TestWithWallet {
         sendMoneyToWallet(AbstractBlockChain.NewBlockType.BEST_CHAIN, COIN);
 
         SendRequest request = SendRequest.to(OTHER_ADDRESS, CENT);
+        request.tx.addOutput(Coin.valueOf(436800), OTHER_ADDRESS);
         for (int i = 0; i < 45; i++)
             request.tx.addOutput(CENT.multiply(2), OTHER_ADDRESS);
-
-        request.tx.addOutput(Coin.valueOf(436800), OTHER_ADDRESS);
 
         assertTrue(request.tx.unsafeBitcoinSerialize().length > 1000);
         request.feePerKb = Transaction.DEFAULT_TX_FEE;
@@ -2446,6 +2446,28 @@ public class WalletTest extends TestWithWallet {
         assertEquals(Coin.valueOf(436800), output.getMinNonDustValue());
 
         wallet.completeTx(request);
+    }
+
+    @Test
+    public void fairCoinMandatoryFeeTest1() throws Exception {
+        sendMoneyToWallet(AbstractBlockChain.NewBlockType.BEST_CHAIN, COIN.multiply(2));
+
+        SendRequest request = SendRequest.to(OTHER_ADDRESS, Coin.valueOf(436800));
+        request.feePerKb = Transaction.DEFAULT_TX_FEE;
+
+        TransactionOutput output = request.tx.getOutput(request.tx.getOutputs().size() - 1);
+
+        assertEquals(Coin.valueOf(436800), output.getMinNonDustValue());
+
+        wallet.completeTx(request);
+
+        request = SendRequest.to(OTHER_ADDRESS, CENT);
+        request.feePerKb = Transaction.DEFAULT_TX_FEE;
+        request.tx.addOutput(output.getMinNonDustValue().subtract(SATOSHI), OTHER_ADDRESS);
+        try {
+            wallet.completeTx(request);
+            fail("DustySendRequested exception not thrown");
+        } catch (DustySendRequested e) { }
     }
 
     @Test
