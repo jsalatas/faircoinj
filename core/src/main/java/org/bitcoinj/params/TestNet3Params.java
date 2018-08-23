@@ -34,7 +34,7 @@ public class TestNet3Params extends AbstractBitcoinNetParams {
         super();
         id = ID_TESTNET;
         // Genesis hash is 84132bdf7f2c1f8193c721967aa9056b1e7ee1a0b56bcaf6985e51777b0407f7
-        packetMagic = 0x0b110907;
+        packetMagic = 0x0c120a08;
         interval = INTERVAL;
         targetTimespan = TARGET_TIMESPAN;
         maxTarget = Utils.decodeCompactBits(0x1d00ffffL);
@@ -45,19 +45,20 @@ public class TestNet3Params extends AbstractBitcoinNetParams {
         port = 41404;
         genesisBlock.setCreatorId(GENESIS_NODE_ID);
         genesisBlock.setTime(GENESIS_BLOCK_TIMESTAMP + 1);
-        genesisBlock.setHashPayload(Sha256Hash.wrap("e175d27dfc474ec98dfcd6ca104a2d0fbe876c16ed66eacd739d58cf06f25308"));
+        genesisBlock.setHashPayload(Sha256Hash.wrap("1c4ed40a950abbd27f4cd57e1ccb6613a956ce9edb16210cd5acb12f708389f3"));
         spendableCoinbaseDepth = 100;
         subsidyDecreaseBlockCount = 210000;
         String genesisHash = genesisBlock.getHashAsString();
 
-        checkState(genesisHash.equals("4302da2d7518f09ff7683931863ef835f40b03760c50d8245049b0182ee512bc"));
+        checkState(genesisHash.equals("42327d5edf3cbb75bb139ec78bd62e517f14d7cbad451e4778741b6b4c1dfbc6"));
         alertSigningKey = Utils.HEX.decode("045894f38e9dd72b6f210c261d40003eb087030c42b102d3b238b396256d02f5a380ff3b7444d306d9e118fa1fc7b2b7594875f4eb64bbeaa31577391d85eb5a8a");
 
-        genesisBlock.setCreatorSignature(SchnorrSignature.wrap("c0e924975224cba8a8aa599f287e0e4e2be9eb5e2488b83d390fa2be2e4b847f5e3586fbb574e473b303c0f16b65d36d00b4f61c7bee5bb8b1eb35bd2e2cd7ed"));
+        genesisBlock.setCreatorSignature(SchnorrSignature.wrap("377599b4021c3e35a40667466734d2d1a3a1ef94cf52e1f5a6863af180ed7258982869d956ff34251ef4e13d7fd341a68c3e47007b5cbc0c67860a8956df9e71"));
 
         dnsSeeds = new String[] {
-
+                "faircoin2-testnet-seed1.fair-coin.org"  // Thomas König
         };
+
         addrSeeds = null;
         bip32HeaderPub = 0x043587CF;
         bip32HeaderPriv = 0x04358394;
