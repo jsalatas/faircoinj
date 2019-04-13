@@ -308,9 +308,8 @@ public class TransactionOutput extends ChildMessage {
             else if (ScriptPattern.isP2PKH(script))
                 return transactionBag.isPubKeyHashMine(ScriptPattern.extractHashFromP2PKH(script),
                         Script.ScriptType.P2PKH);
-            else if (ScriptPattern.isP2WPKH(script))
-                return transactionBag.isPubKeyHashMine(ScriptPattern.extractHashFromP2WH(script),
-                        Script.ScriptType.P2WPKH);
+            else if (ScriptPattern.isOpReturn(script))
+                    return false;
             else
                 return false;
         } catch (ScriptException e) {
@@ -330,8 +329,7 @@ public class TransactionOutput extends ChildMessage {
             Script script = getScriptPubKey();
             StringBuilder buf = new StringBuilder("TxOut of ");
             buf.append(Coin.valueOf(value).toFriendlyString());
-            if (ScriptPattern.isP2PKH(script) || ScriptPattern.isP2WPKH(script)
-                    || ScriptPattern.isP2SH(script))
+            if (ScriptPattern.isP2PKH(script) || ScriptPattern.isP2SH(script))
                 buf.append(" to ").append(script.getToAddress(params));
             else if (ScriptPattern.isP2PK(script))
                 buf.append(" to pubkey ").append(Utils.HEX.encode(ScriptPattern.extractKeyFromP2PK(script)));

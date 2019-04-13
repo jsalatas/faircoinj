@@ -226,9 +226,9 @@ public class CheckpointManager {
         checkNotNull(store);
         checkArgument(!(store instanceof FullPrunedBlockStore), "You cannot use checkpointing with a full store.");
 
-        time -= 86400 * 7;
+        if (time <= params.getGenesisBlock().getTimeSeconds())
+            time = params.getGenesisBlock().getTimeSeconds() + 181;
 
-        checkArgument(time > 0);
         log.info("Attempting to initialize a new block store with a checkpoint for time {} ({})", time, Utils.dateTimeFormat(time * 1000));
 
         BufferedInputStream stream = new BufferedInputStream(checkpoints);

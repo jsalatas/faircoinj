@@ -73,6 +73,9 @@ public class BitcoinSerializer extends MessageSerializer {
         names.put(GetUTXOsMessage.class, "getutxos");
         names.put(UTXOsMessage.class, "utxos");
         names.put(SendHeadersMessage.class, "sendheaders");
+        names.put(NoncePoolMessage.class, "noncepool");
+        names.put(ChainSigMessage.class, "sig");
+        names.put(ChainDataMessage.class, "chaindata");
     }
 
     /**
@@ -233,6 +236,12 @@ public class BitcoinSerializer extends MessageSerializer {
             return new GetUTXOsMessage(params, payloadBytes);
         } else if (command.equals("sendheaders")) {
             return new SendHeadersMessage(params, payloadBytes);
+        } else if (command.equals("noncepool")) {
+            return new NoncePoolMessage(params, payloadBytes);
+        } else if (command.equals("sig")) {
+            return new ChainSigMessage(params, payloadBytes);
+        } else if (command.equals("chaindata")) {
+            return new ChainDataMessage(params, payloadBytes);
         } else {
             log.warn("No support for deserializing message with name {}", command);
             return new UnknownMessage(params, command, payloadBytes);

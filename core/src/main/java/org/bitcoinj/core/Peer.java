@@ -389,14 +389,6 @@ public class Peer extends PeerSocketHandler {
             a.add("BLOOM");
             services &= ~VersionMessage.NODE_BLOOM;
         }
-        if ((services & VersionMessage.NODE_WITNESS) == VersionMessage.NODE_WITNESS) {
-            a.add("WITNESS");
-            services &= ~VersionMessage.NODE_WITNESS;
-        }
-        if ((services & VersionMessage.NODE_NETWORK_LIMITED) == VersionMessage.NODE_NETWORK_LIMITED) {
-            a.add("NETWORK_LIMITED");
-            services &= ~VersionMessage.NODE_NETWORK_LIMITED;
-        }
         if (services != 0)
             a.add("remaining: " + Long.toBinaryString(services));
         return Joiner.on(", ").join(a);
@@ -506,11 +498,31 @@ public class Peer extends PeerSocketHandler {
             processVersionAck((VersionAck) m);
         } else if (m instanceof UTXOsMessage) {
             processUTXOMessage((UTXOsMessage) m);
+        } else if (m instanceof SendHeadersMessage) {
+
+        } else if (m instanceof NoncePoolMessage) {
+            processNoncePool((NoncePoolMessage)m);
+        } else if (m instanceof ChainSigMessage) {
+            processChainSignature((ChainSigMessage)m);
+        } else if (m instanceof ChainDataMessage) {
+            processChainData((ChainDataMessage)m);
         } else if (m instanceof RejectMessage) {
             log.error("{} {}: Received {}", this, getPeerVersionMessage().subVer, m);
         } else {
             log.warn("{}: Received unhandled message: {}", this, m);
         }
+    }
+
+    protected void processChainData(ChainDataMessage m) {
+
+    }
+
+    protected void processChainSignature(ChainSigMessage m) {
+
+    }
+
+    protected void processNoncePool(NoncePoolMessage m) {
+
     }
 
     protected void processUTXOMessage(UTXOsMessage m) {
@@ -546,20 +558,6 @@ public class Peer extends PeerSocketHandler {
         // mode nodes because we can't download the data from them we need to find/verify transactions. Some bogus
         // implementations claim to have a block chain in their services field but then report a height of zero, filter
         // them out here.
-        if (!vPeerVersionMessage.hasLimitedBlockChain() ||
-                (!params.allowEmptyPeerChain() && vPeerVersionMessage.bestHeight == 0)) {
-            // Shut down the channel gracefully.
-            log.info("{}: Peer does not have at least a recent part of the block chain.", this);
-            close();
-            return;
-        }
-        if ((vPeerVersionMessage.localServices
-                & VersionMessage.NODE_BITCOIN_CASH) == VersionMessage.NODE_BITCOIN_CASH) {
-            log.info("{}: Peer follows an incompatible block chain.", this);
-            // Shut down the channel gracefully.
-            close();
-            return;
-        }
         if (vPeerVersionMessage.bestHeight < 0)
             // In this case, it's a protocol violation.
             throw new ProtocolException("Peer reports invalid best height: " + vPeerVersionMessage.bestHeight);
@@ -900,7 +898,7 @@ public class Peer extends PeerSocketHandler {
             if (needToRequest.size() > 1)
                 log.info("{}: Requesting {} transactions for depth {} dep resolution", getAddress(), needToRequest.size(), depth + 1);
             for (Sha256Hash hash : needToRequest) {
-                getdata.addTransaction(hash, vPeerVersionMessage.isWitnessSupported());
+                getdata.addTransaction(hash);
                 GetDataRequest req = new GetDataRequest(hash, SettableFuture.create());
                 futures.add(req.future);
                 getDataFutures.add(req);
@@ -1160,6 +1158,7 @@ public class Peer extends PeerSocketHandler {
         // Separate out the blocks and transactions, we'll handle them differently
         List<InventoryItem> transactions = new LinkedList<>();
         List<InventoryItem> blocks = new LinkedList<>();
+        List<InventoryItem> pocData = new LinkedList<>();
 
         for (InventoryItem item : items) {
             switch (item.type) {
@@ -1168,6 +1167,11 @@ public class Peer extends PeerSocketHandler {
                     break;
                 case BLOCK:
                     blocks.add(item);
+                    break;
+                case CVN_PUB_NONCE_POOL:
+                case CVN_SIGNATURE:
+                case POC_CHAIN_DATA:
+                    pocData.add(item);
                     break;
                 default:
                     throw new IllegalStateException("Not implemented: " + item.type);
@@ -1212,10 +1216,17 @@ public class Peer extends PeerSocketHandler {
                 it.remove();
             } else {
                 log.debug("{}: getdata on tx {}", getAddress(), item.hash);
-                getdata.addTransaction(item.hash, vPeerVersionMessage.isWitnessSupported());
+                getdata.addTransaction(item.hash);
                 // Register with the garbage collector that we care about the confidence data for a while.
                 pendingTxDownloads.add(conf);
             }
+        }
+
+        it = pocData.iterator();
+        while (it.hasNext()) {
+            InventoryItem item = it.next();
+            log.debug("{}: getdata on type:{} {}", getAddress(), item.type, item.hash);
+            getdata.addItem(item);
         }
 
         // If we are requesting filteredblocks we have to send a ping after the getdata so that we have a clear
@@ -1252,7 +1263,7 @@ public class Peer extends PeerSocketHandler {
                                 getdata.addFilteredBlock(item.hash);
                                 pingAfterGetData = true;
                             } else {
-                                getdata.addBlock(item.hash, vPeerVersionMessage.isWitnessSupported());
+                                getdata.addBlock(item.hash);
                             }
                             pendingBlockDownloads.add(item.hash);
                         }
@@ -1290,7 +1301,7 @@ public class Peer extends PeerSocketHandler {
         // This does not need to be locked.
         log.info("Request to fetch block {}", blockHash);
         GetDataMessage getdata = new GetDataMessage(params);
-        getdata.addBlock(blockHash, true);
+        getdata.addBlock(blockHash);
         return sendSingleGetData(getdata);
     }
 
@@ -1308,7 +1319,7 @@ public class Peer extends PeerSocketHandler {
         // TODO: Unit test this method.
         log.info("Request to fetch peer mempool tx  {}", hash);
         GetDataMessage getdata = new GetDataMessage(params);
-        getdata.addTransaction(hash, vPeerVersionMessage.isWitnessSupported());
+        getdata.addTransaction(hash);
         return sendSingleGetData(getdata);
     }
 

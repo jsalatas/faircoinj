@@ -339,6 +339,7 @@ public abstract class Message {
             cursor += length;
             return b;
         } catch (IndexOutOfBoundsException e) {
+            e.printStackTrace();
             throw new ProtocolException(e);
         }
     }
@@ -357,6 +358,18 @@ public abstract class Message {
         // We have to flip it around, as it's been read off the wire in little endian.
         // Not the most efficient way to do this but the clearest.
         return Sha256Hash.wrapReversed(readBytes(32));
+    }
+
+    protected SchnorrSignature readSignature() throws ProtocolException {
+        return SchnorrSignature.wrap(readBytes(64));
+    }
+
+    protected SchnorrPublicKey readPubKey() throws ProtocolException {
+        return SchnorrPublicKey.wrap(readBytes(64));
+    }
+
+    protected SchnorrNonce readNonce() throws ProtocolException {
+        return SchnorrNonce.wrap(readBytes(64));
     }
 
     protected boolean hasMoreBytes() {

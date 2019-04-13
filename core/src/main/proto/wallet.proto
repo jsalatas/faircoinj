@@ -140,7 +140,6 @@ message Key {
 
   enum OutputScriptType {
     P2PKH = 1;
-    P2WPKH = 2;
   }
   // Type of addresses (aka output scripts) to generate for receiving.
   optional OutputScriptType output_script_type = 11;
@@ -154,10 +153,6 @@ message Script {
   required int64 creation_timestamp = 2;
 }
 
-message ScriptWitness {
-    repeated bytes data = 1;
-}
-
 message TransactionInput {
   // Hash of the transaction this input is using.
   required bytes transaction_out_point_hash = 1;
@@ -169,8 +164,6 @@ message TransactionInput {
   optional uint32 sequence = 4;
   // Value of connected output, if known
   optional int64 value = 5;
-  // script witness
-  optional ScriptWitness witness = 6;
 }
 
 message TransactionOutput {

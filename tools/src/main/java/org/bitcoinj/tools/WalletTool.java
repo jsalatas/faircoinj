@@ -68,7 +68,6 @@ import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Peer;
 import org.bitcoinj.core.PeerAddress;
 import org.bitcoinj.core.PeerGroup;
-import org.bitcoinj.core.SegwitAddress;
 import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.StoredBlock;
 import org.bitcoinj.core.Transaction;
@@ -1439,8 +1438,6 @@ public class WalletTool {
             System.out.println("WARNING: Importing an uncompressed key");
         wallet.importKey(key);
         System.out.print("Addresses: " + LegacyAddress.fromKey(params, key));
-        if (key.isCompressed())
-            System.out.print("," + SegwitAddress.fromKey(params, key));
         System.out.println();
     }
 

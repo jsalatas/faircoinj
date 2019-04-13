@@ -34,7 +34,7 @@ public interface KeyBag {
      *            hash of the keypair to look for
      * @param scriptType
      *            only look for given usage (currently {@link Script.ScriptType#P2PKH} or
-     *            {@link Script.ScriptType#P2WPKH}) or {@code null} if we don't care
+     *            {@code null} if we don't care
      * @return found key or null if no such key was found.
      */
     @Nullable

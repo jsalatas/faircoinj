@@ -1296,8 +1296,6 @@ public class ECKey implements EncryptableItem {
             builder.append(Address.fromKey(params, this, outputScriptType));
         } else {
             builder.append(LegacyAddress.fromKey(params, this));
-            if (isCompressed())
-                builder.append(',').append(SegwitAddress.fromKey(params, this));
         }
         if (!isCompressed())
             builder.append("  UNCOMPRESSED");

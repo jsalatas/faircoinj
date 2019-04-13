@@ -50,8 +50,7 @@ import static com.google.common.base.Preconditions.*;
  * <p>There can be active keychains for each output script type. However this class almost entirely only works on
  * the default active keychain (see {@link #getActiveKeyChain()}). The other active keychains
  * (see {@link #getActiveKeyChain(ScriptType, long)}) are meant as fallback for if a sender doesn't understand a
- * certain new script type (e.g. P2WPKH which comes with the new Bech32 address format). Active keychains
- * share the same seed, so that upgrading the wallet
+ * certain new script type. Active keychains share the same seed, so that upgrading the wallet
  * (see {@link #upgradeToDeterministic(ScriptType, KeyChainGroupStructure, long, KeyParameter)}) to understand
  * a new script type doesn't require a fresh backup.</p>
  *
@@ -86,10 +85,7 @@ public class KeyChainGroup implements KeyBag {
         /**
          * <p>Add chain from a random source.</p>
          * <p>In the case of P2PKH, just a P2PKH chain is created and activated which is then the default chain for fresh
-         * addresses. It can be upgraded to P2WPKH later.</p>
-         * <p>In the case of P2WPKH, both a P2PKH and a P2WPKH chain are created and activated, the latter being the default
-         * chain. This behaviour will likely be changed with bitcoinj 0.16 such that only a P2WPKH chain is created and
-         * activated.</p>
+         * addresses.</p>
          * @param outputScriptType type of addresses (aka output scripts) to generate for receiving
          */
         public Builder fromRandom(Script.ScriptType outputScriptType) {
@@ -102,10 +98,7 @@ public class KeyChainGroup implements KeyBag {
         /**
          * <p>Add chain from a given seed.</p>
          * <p>In the case of P2PKH, just a P2PKH chain is created and activated which is then the default chain for fresh
-         * addresses. It can be upgraded to P2WPKH later.</p>
-         * <p>In the case of P2WPKH, both a P2PKH and a P2WPKH chain are created and activated, the latter being the default
-         * chain. This behaviour will likely be changed with bitcoinj 0.16 such that only a P2WPKH chain is created and
-         * activated.</p>
+         * addresses.</p>
          * @param seed deterministic seed to derive all keys from
          * @param outputScriptType type of addresses (aka output scripts) to generate for receiving
          */
@@ -116,16 +109,6 @@ public class KeyChainGroup implements KeyBag {
                         .accountPath(structure.accountPathFor(Script.ScriptType.P2PKH)).build();
                 this.chains.clear();
                 this.chains.add(chain);
-            } else if (outputScriptType == Script.ScriptType.P2WPKH) {
-                DeterministicKeyChain fallbackChain = DeterministicKeyChain.builder().seed(seed)
-                        .outputScriptType(Script.ScriptType.P2PKH)
-                        .accountPath(structure.accountPathFor(Script.ScriptType.P2PKH)).build();
-                DeterministicKeyChain defaultChain = DeterministicKeyChain.builder().seed(seed)
-                        .outputScriptType(Script.ScriptType.P2WPKH)
-                        .accountPath(structure.accountPathFor(Script.ScriptType.P2WPKH)).build();
-                this.chains.clear();
-                this.chains.add(fallbackChain);
-                this.chains.add(defaultChain);
             } else {
                 throw new IllegalArgumentException(outputScriptType.toString());
             }
@@ -314,7 +297,7 @@ public class KeyChainGroup implements KeyBag {
                 currentAddresses.put(purpose, current);
             }
             return current;
-        } else if (outputScriptType == Script.ScriptType.P2PKH || outputScriptType == Script.ScriptType.P2WPKH) {
+        } else if (outputScriptType == Script.ScriptType.P2PKH) {
             return Address.fromKey(params, currentKey(purpose), outputScriptType);
         } else {
             throw new IllegalStateException(chain.getOutputScriptType().toString());
@@ -384,7 +367,7 @@ public class KeyChainGroup implements KeyBag {
             maybeLookaheadScripts();
             currentAddresses.put(purpose, freshAddress);
             return freshAddress;
-        } else if (outputScriptType == Script.ScriptType.P2PKH || outputScriptType == Script.ScriptType.P2WPKH) {
+        } else if (outputScriptType == Script.ScriptType.P2PKH) {
             return Address.fromKey(params, freshKey(purpose), outputScriptType);
         } else {
             throw new IllegalStateException(chain.getOutputScriptType().toString());
@@ -849,15 +832,12 @@ public class KeyChainGroup implements KeyBag {
     }
 
     /**
-     * <p>This method will upgrade the wallet along the following path: {@code Basic --> P2PKH --> P2WPKH}</p>
+     * <p>This method will upgrade the wallet along the following path: {@code Basic --> P2PKH}</p>
      * <p>It won't skip any steps in that upgrade path because the user might be restoring from a backup and
      * still expects money on the P2PKH chain.</p>
      * <p>It will extract and reuse the seed from the current wallet, so that a fresh backup isn't required
      * after upgrading. If coming from a basic chain containing only random keys this means it will pick the
      * oldest non-rotating private key as a seed.</p>
-     * <p>Note that for upgrading an encrypted wallet, the decryption key is needed. In future, we could skip
-     * that requirement for a {@code P2PKH --> P2WPKH} upgrade and just clone the encryped seed, but currently
-     * the key is needed even for that.</p>
      *
      * @param preferredScriptType desired script type for the active keychain
      * @param structure keychain group structure to derive an account path from
@@ -927,25 +907,6 @@ public class KeyChainGroup implements KeyBag {
                     .outputScriptType(Script.ScriptType.P2PKH)
                     .accountPath(structure.accountPathFor(Script.ScriptType.P2PKH)).build();
             if (keyWasEncrypted)
-                chain = chain.toEncrypted(checkNotNull(keyCrypter), aesKey);
-            addAndActivateHDChain(chain);
-        }
-
-        // P2PKH --> P2WPKH upgrade
-        if (preferredScriptType == Script.ScriptType.P2WPKH
-                && getActiveKeyChain(Script.ScriptType.P2WPKH, keyRotationTimeSecs) == null) {
-            DeterministicSeed seed = getActiveKeyChain(Script.ScriptType.P2PKH, keyRotationTimeSecs).getSeed();
-            boolean seedWasEncrypted = seed.isEncrypted();
-            if (seedWasEncrypted) {
-                if (aesKey == null)
-                    throw new DeterministicUpgradeRequiresPassword();
-                seed = seed.decrypt(keyCrypter, "", aesKey);
-            }
-            log.info("Upgrading from P2PKH to P2WPKH deterministic keychain. Using seed: {}", seed);
-            DeterministicKeyChain chain = DeterministicKeyChain.builder().seed(seed)
-                    .outputScriptType(Script.ScriptType.P2WPKH)
-                    .accountPath(structure.accountPathFor(Script.ScriptType.P2WPKH)).build();
-            if (seedWasEncrypted)
                 chain = chain.toEncrypted(checkNotNull(keyCrypter), aesKey);
             addAndActivateHDChain(chain);
         }

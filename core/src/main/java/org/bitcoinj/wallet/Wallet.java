@@ -124,7 +124,7 @@ import static com.google.common.base.Preconditions.*;
  * for more information about this.</p>
  */
 public class Wallet extends BaseTaggableObject
-    implements NewBestBlockListener, TransactionReceivedInBlockListener, PeerFilterProvider, KeyBag, TransactionBag, ReorganizeListener {
+    implements NewBestBlockListener, TransactionReceivedInBlockListener, PeerFilterProvider, KeyBag, TransactionBag, ReorganizeListener, TransactionFeeChangedListener {
     private static final Logger log = LoggerFactory.getLogger(Wallet.class);
     private static final int MINIMUM_BLOOM_DATA_LENGTH = 8;
 
@@ -459,8 +459,6 @@ public class Wallet extends BaseTaggableObject
         int header = ByteBuffer.wrap(Base58.decodeChecked(base58)).getInt();
         if (header == params.getBip32HeaderP2PKHpub() || header == params.getBip32HeaderP2PKHpriv())
             return Script.ScriptType.P2PKH;
-        else if (header == params.getBip32HeaderP2WPKHpub() || header == params.getBip32HeaderP2WPKHpriv())
-            return Script.ScriptType.P2WPKH;
         else
             throw new IllegalArgumentException(base58.substring(0, 4));
     }
@@ -485,6 +483,7 @@ public class Wallet extends BaseTaggableObject
         signers = new ArrayList<>();
         addTransactionSigner(new LocalTransactionSigner());
         createTransientState();
+        fairCoin1Upgrade = false;
     }
 
     private void createTransientState() {
@@ -1171,12 +1170,10 @@ public class Wallet extends BaseTaggableObject
      */
     public boolean isAddressMine(Address address) {
         final ScriptType scriptType = address.getOutputScriptType();
-        if (scriptType == ScriptType.P2PKH || scriptType == ScriptType.P2WPKH)
+        if (scriptType == ScriptType.P2PKH)
             return isPubKeyHashMine(address.getHash(), scriptType);
         else if (scriptType == ScriptType.P2SH)
             return isPayToScriptHashMine(address.getHash());
-        else if (scriptType == ScriptType.P2WSH)
-            return false;
         else
             throw new IllegalArgumentException(address.toString());
     }
@@ -1208,7 +1205,7 @@ public class Wallet extends BaseTaggableObject
      */
     public ECKey findKeyFromAddress(Address address) {
         final ScriptType scriptType = address.getOutputScriptType();
-        if (scriptType == ScriptType.P2PKH || scriptType == ScriptType.P2WPKH)
+        if (scriptType == ScriptType.P2PKH)
             return findKeyFromPubKeyHash(address.getHash(), scriptType);
         else
             return null;
@@ -1274,9 +1271,6 @@ public class Wallet extends BaseTaggableObject
                         LegacyAddress a = LegacyAddress.fromScriptHash(tx.getParams(),
                                 ScriptPattern.extractHashFromP2SH(script));
                         keyChainGroup.markP2SHAddressAsUsed(a);
-                    } else if (ScriptPattern.isP2WH(script)) {
-                        byte[] pubkeyHash = ScriptPattern.extractHashFromP2WH(script);
-                        keyChainGroup.markPubKeyHashAsUsed(pubkeyHash);
                     }
                 } catch (ScriptException e) {
                     // Just means we didn't understand the output of this transaction: ignore it.
@@ -4127,7 +4121,7 @@ public class Wallet extends BaseTaggableObject
             List<TransactionInput> originalInputs = new ArrayList<>(req.tx.getInputs());
 
             // Check for dusty sends and the OP_RETURN limit.
-            if (req.ensureMinRequiredFee && !req.emptyWallet) { // Min fee checking is handled later for emptyWallet.
+            if (!req.emptyWallet) { // Min fee checking is handled later for emptyWallet.
                 int opReturnCount = 0;
                 for (TransactionOutput output : req.tx.getOutputs()) {
                     if (output.isDust())
@@ -4247,8 +4241,7 @@ public class Wallet extends BaseTaggableObject
                     // We assume if its already signed, its hopefully got a SIGHASH type that will not invalidate when
                     // we sign missing pieces (to check this would require either assuming any signatures are signing
                     // standard output types or a way to get processed signatures out of script execution)
-                    txIn.getScriptSig().correctlySpends(tx, i, txIn.getWitness(), connectedOutput.getValue(),
-                            connectedOutput.getScriptPubKey(), Script.ALL_VERIFY_FLAGS);
+                    txIn.getScriptSig().correctlySpends(tx, i, connectedOutput.getScriptPubKey(), Script.ALL_VERIFY_FLAGS);
                     log.warn("Input {} already correctly spends output, assuming SIGHASH type used will be safe and skipping signing.", i);
                     continue;
                 } catch (ScriptException e) {
@@ -4259,7 +4252,6 @@ public class Wallet extends BaseTaggableObject
                 RedeemData redeemData = txIn.getConnectedRedeemData(maybeDecryptingKeyBag);
                 checkNotNull(redeemData, "Transaction exists in wallet that we cannot redeem: %s", txIn.getOutpoint().getHash());
                 txIn.setScriptSig(scriptPubKey.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript));
-                txIn.setWitness(scriptPubKey.createEmptyWitness(redeemData.keys.get(0)));
             }
 
             TransactionSigner.ProposedTransaction proposal = new TransactionSigner.ProposedTransaction(tx);
@@ -4341,10 +4333,6 @@ public class Wallet extends BaseTaggableObject
             ECKey key = findKeyFromPubKeyHash(ScriptPattern.extractHashFromP2PKH(script),
                     Script.ScriptType.P2PKH);
             return key != null && (key.isEncrypted() || key.hasPrivKey());
-        } else if (ScriptPattern.isP2WPKH(script)) {
-            ECKey key = findKeyFromPubKeyHash(ScriptPattern.extractHashFromP2WH(script),
-                    Script.ScriptType.P2WPKH);
-            return key != null && (key.isEncrypted() || key.hasPrivKey()) && key.isCompressed();
         } else if (ScriptPattern.isSentToMultisig(script)) {
             for (ECKey pubkey : script.getPubKeys()) {
                 ECKey key = findKeyFromPubKey(pubkey.getPubKey());
@@ -4809,9 +4797,6 @@ public class Wallet extends BaseTaggableObject
         try {
             if (!watchedScripts.isEmpty())
                 return true;
-            for (DeterministicKeyChain chain : keyChainGroup.chains)
-                if (chain.getOutputScriptType() == Script.ScriptType.P2WPKH)
-                    return true;
             return false;
         } finally {
             keyChainGroupLock.unlock();
@@ -4868,8 +4853,7 @@ public class Wallet extends BaseTaggableObject
     // Returns true if the output is one that won't be selected by a data element matching in the scriptSig.
     private boolean isTxOutputBloomFilterable(TransactionOutput out) {
         Script script = out.getScriptPubKey();
-        boolean isScriptTypeSupported = ScriptPattern.isP2PK(script) || ScriptPattern.isP2SH(script)
-                || ScriptPattern.isP2WPKH(script) || ScriptPattern.isP2WSH(script);
+        boolean isScriptTypeSupported = ScriptPattern.isP2PK(script) || ScriptPattern.isP2SH(script);
         return (isScriptTypeSupported && myUnspents.contains(out)) || watchedScripts.contains(script);
     }
 
@@ -5060,19 +5044,6 @@ public class Wallet extends BaseTaggableObject
                 if (changeAddress == null)
                     changeAddress = currentChangeAddress();
                 TransactionOutput changeOutput = new TransactionOutput(params, tx, change, changeAddress);
-                if (req.recipientsPayFees && changeOutput.isDust()) {
-                    // We do not move dust-change to fees, because the sender would end up paying more than requested.
-                    // This would be against the purpose of the all-inclusive feature.
-                    // So instead we raise the change and deduct from the first recipient.
-                    Coin missingToNotBeDust = changeOutput.getMinNonDustValue().subtract(changeOutput.getValue());
-                    changeOutput.setValue(changeOutput.getValue().add(missingToNotBeDust));
-                    TransactionOutput firstOutput = tx.getOutputs().get(0);
-                    firstOutput.setValue(firstOutput.getValue().subtract(missingToNotBeDust));
-                    result.updatedOutputValues.set(0, firstOutput.getValue());
-                    if (firstOutput.isDust()) {
-                        throw new CouldNotAdjustDownwards();
-                    }
-                }
                 if (changeOutput.isDust()) {
                     // Never create dust outputs; if we would, just
                     // add the dust to the fee.
@@ -5091,7 +5062,6 @@ public class Wallet extends BaseTaggableObject
                 TransactionInput input = tx.addInput(selectedOutput);
                 // If the scriptBytes don't default to none, our size calculations will be thrown off.
                 checkState(input.getScriptBytes().length == 0);
-                checkState(!input.hasWitness());
             }
 
             int size = tx.unsafeBitcoinSerialize().length;
@@ -5130,10 +5100,6 @@ public class Wallet extends BaseTaggableObject
                 if (ScriptPattern.isP2PKH(script)) {
                     key = findKeyFromPubKeyHash(ScriptPattern.extractHashFromP2PKH(script),
                             Script.ScriptType.P2PKH);
-                    checkNotNull(key, "Coin selection includes unspendable outputs");
-                } else if (ScriptPattern.isP2WPKH(script)) {
-                    key = findKeyFromPubKeyHash(ScriptPattern.extractHashFromP2WH(script),
-                            Script.ScriptType.P2WPKH);
                     checkNotNull(key, "Coin selection includes unspendable outputs");
                 } else if (ScriptPattern.isP2SH(script)) {
                     redeemScript = findRedeemDataFromScriptHash(ScriptPattern.extractHashFromP2SH(script)).redeemScript;
@@ -5464,4 +5430,25 @@ public class Wallet extends BaseTaggableObject
         }
     }
     //endregion
+
+    private Coin currentTransactionFee;
+    private boolean fairCoin1Upgrade;
+
+    @Override
+    public void onTransactionFeeChanged(final Coin transactionFee) {
+        log.info("setting tx fee to {} in wallet", transactionFee.toFriendlyString());
+        this.currentTransactionFee = transactionFee;
+    }
+
+    public Coin getCurrentTransactionFee() {
+        return currentTransactionFee;
+    }
+
+    public boolean isFairCoin1Upgrade() {
+        return fairCoin1Upgrade;
+    }
+
+    public void setFairCoin1Upgrade(boolean fairCoin1Upgrade) {
+        this.fairCoin1Upgrade = fairCoin1Upgrade;
+    }
 }

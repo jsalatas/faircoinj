@@ -154,6 +154,7 @@ public class SPVBlockStore implements BlockStore {
             } catch (IOException e2) {
                 throw new BlockStoreException(e2);
             }
+            e.printStackTrace();
             throw new BlockStoreException(e);
         }
     }
@@ -242,6 +243,7 @@ public class SPVBlockStore implements BlockStore {
             notFoundCache.put(hash, NOT_FOUND_MARKER);
             return null;
         } catch (ProtocolException e) {
+            e.printStackTrace();
             throw new RuntimeException(e);  // Cannot happen.
         } finally { lock.unlock(); }
     }

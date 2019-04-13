@@ -268,7 +268,6 @@ public class FakeTxBuilder {
                 tx.getConfidence().setSource(TransactionConfidence.Source.NETWORK);
                 b.addTransaction(tx);
             }
-            b.solve();
             BlockPair pair = new BlockPair();
             pair.block = b;
             pair.storedBlock = previousStoredBlock.build(b);
@@ -283,7 +282,7 @@ public class FakeTxBuilder {
     }
 
     public static BlockPair createFakeBlock(BlockStore blockStore, StoredBlock previousStoredBlock, int height, Transaction... transactions) {
-        return createFakeBlock(blockStore, previousStoredBlock, Block.BLOCK_VERSION_BIP66, Utils.currentTimeSeconds(), height, transactions);
+        return createFakeBlock(blockStore, previousStoredBlock, 1, Utils.currentTimeSeconds(), height, transactions);
     }
 
     /** Emulates receiving a valid block that builds on top of the chain. */
@@ -308,7 +307,6 @@ public class FakeTxBuilder {
 
     public static Block makeSolvedTestBlock(BlockStore blockStore, Address coinsTo) throws BlockStoreException {
         Block b = blockStore.getChainHead().getHeader().createNextBlock(coinsTo);
-        b.solve();
         return b;
     }
 
@@ -319,7 +317,6 @@ public class FakeTxBuilder {
         for (Transaction tx : transactions) {
             b.addTransaction(tx);
         }
-        b.solve();
         return b;
     }
 
@@ -329,7 +326,6 @@ public class FakeTxBuilder {
         for (Transaction tx : transactions) {
             b.addTransaction(tx);
         }
-        b.solve();
         return b;
     }
 }

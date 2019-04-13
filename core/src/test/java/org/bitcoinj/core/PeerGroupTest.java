@@ -687,16 +687,16 @@ public class PeerGroupTest extends TestWithPeerGroup {
 
     @Test
     public void waitForPeersOfVersion() throws Exception {
-        final int bip37ver = UNITTEST.getProtocolVersionNum(NetworkParameters.ProtocolVersion.BLOOM_FILTER);
-        final int bip111ver = UNITTEST.getProtocolVersionNum(NetworkParameters.ProtocolVersion.BLOOM_FILTER_BIP111);
+        final int baseVer = peerGroup.getMinRequiredProtocolVersion() + 3000;
+        final int newVer = baseVer + 1000;
 
-        ListenableFuture<List<Peer>> future = peerGroup.waitForPeersOfVersion(2, bip111ver);
+        ListenableFuture<List<Peer>> future = peerGroup.waitForPeersOfVersion(2, newVer);
 
         VersionMessage ver1 = new VersionMessage(UNITTEST, 10);
-        ver1.clientVersion = bip37ver;
+        ver1.clientVersion = baseVer;
         ver1.localServices = VersionMessage.NODE_NETWORK;
         VersionMessage ver2 = new VersionMessage(UNITTEST, 10);
-        ver2.clientVersion = bip111ver;
+        ver2.clientVersion = newVer;
         ver2.localServices = VersionMessage.NODE_NETWORK | VersionMessage.NODE_BLOOM;
         peerGroup.start();
         assertFalse(future.isDone());
@@ -704,7 +704,7 @@ public class PeerGroupTest extends TestWithPeerGroup {
         assertFalse(future.isDone());
         connectPeer(2, ver2);
         assertFalse(future.isDone());
-        assertTrue(peerGroup.waitForPeersOfVersion(1, bip111ver).isDone());   // Immediate completion.
+        assertTrue(peerGroup.waitForPeersOfVersion(1, newVer).isDone());   // Immediate completion.
         connectPeer(3, ver2);
         future.get();
         assertTrue(future.isDone());

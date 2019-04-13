@@ -22,8 +22,7 @@ import org.bitcoinj.core.*;
 import java.math.BigInteger;
 
 /**
- * Network parameters used by the bitcoinj unit tests (and potentially your own). This lets you solve a block using
- * {@link Block#solve()} by setting difficulty to the easiest possible.
+ * Network parameters used by the bitcoinj unit tests (and potentially your own).
  */
 public class UnitTestParams extends AbstractBitcoinNetParams {
     public static final int UNITNET_MAJORITY_WINDOW = 8;
@@ -38,12 +37,9 @@ public class UnitTestParams extends AbstractBitcoinNetParams {
         p2shHeader = 196;
         maxTarget = new BigInteger("00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
         genesisBlock.setTime(System.currentTimeMillis() / 1000);
-        genesisBlock.setDifficultyTarget(Block.EASIEST_DIFFICULTY_TARGET);
-        genesisBlock.solve();
         port = 18333;
         interval = 10;
         dumpedPrivateKeyHeader = 239;
-        segwitAddressHrp = "tb";
         targetTimespan = 200000000;  // 6 years. Just a very big number.
         spendableCoinbaseDepth = 5;
         subsidyDecreaseBlockCount = 100;
@@ -51,8 +47,10 @@ public class UnitTestParams extends AbstractBitcoinNetParams {
         addrSeeds = null;
         bip32HeaderP2PKHpub = 0x043587cf; // The 4 byte header that serializes in base58 to "tpub".
         bip32HeaderP2PKHpriv = 0x04358394; // The 4 byte header that serializes in base58 to "tprv"
-        bip32HeaderP2WPKHpub = 0x045f1cf6; // The 4 byte header that serializes in base58 to "vpub".
-        bip32HeaderP2WPKHpriv = 0x045f18bc; // The 4 byte header that serializes in base58 to "vprv"
+
+        genesisBlock.setCreatorId(0xc001d00dL);
+        genesisBlock.setTime(1486481640L);
+        genesisBlock.setCreatorSignature(SchnorrSignature.wrap("5c450c4924f0a037c45ff4a6abe027306432ff7c652be7ef1dc00e63ec72547b862a8304af56f68c67cd5355e785cdce97d2472649347f7890c6fef2da5fa263"));
 
         majorityEnforceBlockUpgrade = 3;
         majorityRejectBlockOutdated = 4;

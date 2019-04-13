@@ -109,14 +109,14 @@ public class BlockChainTest {
         Block b2 = getBlock2();
 
         // Let's try adding an invalid block.
-        long n = b2.getNonce();
-        try {
-            b2.setNonce(12345);
-            testNetChain.add(b2);
-            fail();
-        } catch (VerificationException e) {
-            b2.setNonce(n);
-        }
+//        long n = b2.getNonce();
+//        try {
+//            b2.setNonce(12345);
+//            testNetChain.add(b2);
+//            fail();
+//        } catch (VerificationException e) {
+//            b2.setNonce(n);
+//        }
 
         // Now it works because we reset the nonce.
         assertTrue(testNetChain.add(b2));
@@ -173,8 +173,6 @@ public class BlockChainTest {
         // Create a new block with the right difficulty target given our blistering speed relative to the huge amount
         // of time it's supposed to take (set in the unit test network parameters).
         Block b = prev.createNextBlock(coinbaseTo, 1, Utils.currentTimeSeconds(), UNITTEST.getInterval() + 1);
-        b.setDifficultyTarget(0x201fFFFFL);
-        b.solve();
         assertTrue(chain.add(b));
         // Successfully traversed a difficulty transition period.
     }
@@ -188,13 +186,12 @@ public class BlockChainTest {
         // Merkle root can be anything here, doesn't matter.
         bad.setMerkleRoot(Sha256Hash.wrap("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
         // Nonce was just some number that made the hash < difficulty limit set below, it can be anything.
-        bad.setNonce(140548933);
+        //bad.setNonce(140548933);
         bad.setTime(1279242649);
         bad.setPrevBlockHash(b2.getHash());
         // We're going to make this block so easy 50% of solutions will pass, and check it gets rejected for having a
         // bad difficulty target. Unfortunately the encoding mechanism means we cannot make one that accepts all
         // solutions.
-        bad.setDifficultyTarget(Block.EASIEST_DIFFICULTY_TARGET);
         try {
             testNetChain.add(bad);
             // The difficulty target above should be rejected on the grounds of being easier than the networks
@@ -217,24 +214,6 @@ public class BlockChainTest {
         TESTNET.setMaxTarget(oldVal);
 
         // TODO: Test difficulty change is not out of range when a transition period becomes valid.
-    }
-
-    /**
-     * Test that version 2 blocks are rejected once version 3 blocks are a super
-     * majority.
-     */
-    @Test
-    public void badBip66Version() throws Exception {
-        testDeprecatedBlockVersion(Block.BLOCK_VERSION_BIP34, Block.BLOCK_VERSION_BIP66);
-    }
-
-    /**
-     * Test that version 3 blocks are rejected once version 4 blocks are a super
-     * majority.
-     */
-    @Test
-    public void badBip65Version() throws Exception {
-        testDeprecatedBlockVersion(Block.BLOCK_VERSION_BIP66, Block.BLOCK_VERSION_BIP65);
     }
 
     private void testDeprecatedBlockVersion(final long deprecatedVersion, final long newVersion)
@@ -304,7 +283,6 @@ public class BlockChainTest {
         t2.addOutput(valueOf(2, 0), somebodyElse);
         b1.addTransaction(t1);
         b1.addTransaction(t2);
-        b1.solve();
         chain.add(b1);
         assertEquals(Coin.ZERO, wallet.getBalance());
     }
@@ -397,9 +375,7 @@ public class BlockChainTest {
     private static Block getBlock2() throws Exception {
         Block b2 = new Block(TESTNET, Block.BLOCK_VERSION_GENESIS);
         b2.setMerkleRoot(Sha256Hash.wrap("20222eb90f5895556926c112bb5aa0df4ab5abc3107e21a6950aec3b2e3541e2"));
-        b2.setNonce(875942400L);
         b2.setTime(1296688946L);
-        b2.setDifficultyTarget(0x1d00ffff);
         b2.setPrevBlockHash(Sha256Hash.wrap("00000000b873e79784647a6c82962c70d228557d24a747ea4d1b8bbe878e1206"));
         assertEquals("000000006c02c8ea6e4ff69651f7fcde348fb9d557a06e6957b65552002a7820", b2.getHashAsString());
         b2.verifyHeader();
@@ -409,9 +385,7 @@ public class BlockChainTest {
     private static Block getBlock1() throws Exception {
         Block b1 = new Block(TESTNET, Block.BLOCK_VERSION_GENESIS);
         b1.setMerkleRoot(Sha256Hash.wrap("f0315ffc38709d70ad5647e22048358dd3745f3ce3874223c80a7c92fab0c8ba"));
-        b1.setNonce(1924588547);
         b1.setTime(1296688928);
-        b1.setDifficultyTarget(0x1d00ffff);
         b1.setPrevBlockHash(Sha256Hash.wrap("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"));
         assertEquals("00000000b873e79784647a6c82962c70d228557d24a747ea4d1b8bbe878e1206", b1.getHashAsString());
         b1.verifyHeader();

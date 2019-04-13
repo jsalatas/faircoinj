@@ -78,7 +78,7 @@ public abstract class AbstractFullPrunedBlockChainTest {
         // Tests various test cases from FullBlockTestGenerator
         FullBlockTestGenerator generator = new FullBlockTestGenerator(PARAMS);
         RuleList blockList = generator.getBlocksToTest(false, false, null);
-        
+
         store = createStore(PARAMS, blockList.maximumReorgBlockCount);
         chain = new FullPrunedBlockChain(PARAMS, store);
 
@@ -149,7 +149,6 @@ public abstract class AbstractFullPrunedBlockChainTest {
         // Invalid script.
         input.clearScriptBytes();
         rollingBlock.addTransaction(t);
-        rollingBlock.solve();
         chain.setRunScripts(false);
         try {
             chain.add(rollingBlock);
@@ -192,8 +191,7 @@ public abstract class AbstractFullPrunedBlockChainTest {
         t.addOutput(new TransactionOutput(PARAMS, t, FIFTY_COINS, new byte[]{}));
         t.addSignedInput(spendableOutput, new Script(spendableOutputScriptPubKey), outKey);
         rollingBlock.addTransaction(t);
-        rollingBlock.solve();
-        
+
         chain.add(rollingBlock);
         WeakReference<StoredUndoableBlock> undoBlock = new WeakReference<>(store.getUndoBlock(rollingBlock.getHash()));
 
@@ -224,7 +222,7 @@ public abstract class AbstractFullPrunedBlockChainTest {
         Context context = new Context(MAINNET);
         File blockFile = new File(getClass().getResource("first-100k-blocks.dat").getFile());
         BlockFileLoader loader = new BlockFileLoader(MAINNET, Arrays.asList(blockFile));
-        
+
         store = createStore(MAINNET, 10);
         resetStore(store);
         chain = new FullPrunedBlockChain(context, store);
@@ -268,7 +266,6 @@ public abstract class AbstractFullPrunedBlockChainTest {
         t.addOutput(new TransactionOutput(PARAMS, t, amount, toKey));
         t.addSignedInput(spendableOutput, new Script(spendableOutputScriptPubKey), outKey);
         rollingBlock.addTransaction(t);
-        rollingBlock.solve();
         chain.add(rollingBlock);
         totalAmount = totalAmount.add(amount);
 
@@ -322,7 +319,6 @@ public abstract class AbstractFullPrunedBlockChainTest {
         t.addOutput(new TransactionOutput(PARAMS, t, amount, toKey));
         t.addSignedInput(spendableOutput, new Script(spendableOutputScriptPubKey), outKey);
         rollingBlock.addTransaction(t);
-        rollingBlock.solve();
         chain.add(rollingBlock);
 
         // Create another spend of 1/2 the value of BTC we have available using the wallet (store coin selector).
@@ -375,13 +371,13 @@ public abstract class AbstractFullPrunedBlockChainTest {
 
             // Fill the rest of the window in with v2 blocks
             for (; height < PARAMS.getMajorityWindow(); height++) {
-                chainHead = chainHead.createNextBlockWithCoinbase(Block.BLOCK_VERSION_BIP34,
+                chainHead = chainHead.createNextBlockWithCoinbase(Block.BLOCK_VERSION_GENESIS,
                     outKey.getPubKey(), height);
                 chain.add(chainHead);
             }
             // Throw a broken v2 block in before we have a supermajority to enable
             // enforcement, which should validate as-is
-            chainHead = chainHead.createNextBlockWithCoinbase(Block.BLOCK_VERSION_BIP34,
+            chainHead = chainHead.createNextBlockWithCoinbase(Block.BLOCK_VERSION_GENESIS,
                 outKey.getPubKey(), height * 2);
             chain.add(chainHead);
             height++;
@@ -389,7 +385,7 @@ public abstract class AbstractFullPrunedBlockChainTest {
             // Trying to add a broken v2 block should now result in rejection as
             // we have a v2 supermajority
             thrown.expect(VerificationException.CoinbaseHeightMismatch.class);
-            chainHead = chainHead.createNextBlockWithCoinbase(Block.BLOCK_VERSION_BIP34,
+            chainHead = chainHead.createNextBlockWithCoinbase(Block.BLOCK_VERSION_GENESIS,
                 outKey.getPubKey(), height * 2);
             chain.add(chainHead);
         }  catch(final VerificationException ex) {

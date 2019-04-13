@@ -23,7 +23,6 @@ import com.google.common.collect.Lists;
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.LegacyAddress;
 import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.SegwitAddress;
 import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.Utils;
@@ -269,13 +268,6 @@ public class ScriptBuilder {
                 return createP2SHOutputScript(to.getHash());
             else
                 throw new IllegalStateException("Cannot handle " + scriptType);
-        } else if (to instanceof SegwitAddress) {
-            ScriptBuilder builder = new ScriptBuilder();
-            // OP_0 <pubKeyHash|scriptHash>
-            SegwitAddress toSegwit = (SegwitAddress) to;
-            builder.smallNum(toSegwit.getWitnessVersion());
-            builder.data(toSegwit.getWitnessProgram());
-            return builder.build();
         } else {
             throw new IllegalStateException("Cannot handle " + to);
         }
@@ -464,22 +456,6 @@ public class ScriptBuilder {
     }
 
     /**
-     * Creates a segwit scriptPubKey that sends to the given public key hash.
-     */
-    public static Script createP2WPKHOutputScript(byte[] hash) {
-        checkArgument(hash.length == SegwitAddress.WITNESS_PROGRAM_LENGTH_PKH);
-        return new ScriptBuilder().smallNum(0).data(hash).build();
-    }
-
-    /**
-     * Creates a segwit scriptPubKey that sends to the given public key.
-     */
-    public static Script createP2WPKHOutputScript(ECKey key) {
-        checkArgument(key.isCompressed());
-        return createP2WPKHOutputScript(key.getPubKeyHash());
-    }
-
-    /**
      * Creates a scriptPubKey that sends to the given script hash. Read
      * <a href="https://github.com/bitcoin/bips/blob/master/bip-0016.mediawiki">BIP 16</a> to learn more about this
      * kind of script.
@@ -495,22 +471,6 @@ public class ScriptBuilder {
     public static Script createP2SHOutputScript(Script redeemScript) {
         byte[] hash = Utils.sha256hash160(redeemScript.getProgram());
         return ScriptBuilder.createP2SHOutputScript(hash);
-    }
-
-    /**
-     * Creates a segwit scriptPubKey that sends to the given script hash.
-     */
-    public static Script createP2WSHOutputScript(byte[] hash) {
-        checkArgument(hash.length == SegwitAddress.WITNESS_PROGRAM_LENGTH_SH);
-        return new ScriptBuilder().smallNum(0).data(hash).build();
-    }
-
-    /**
-     * Creates a segwit scriptPubKey for the given redeem script.
-     */
-    public static Script createP2WSHOutputScript(Script redeemScript) {
-        byte[] hash = Sha256Hash.hash(redeemScript.getProgram());
-        return ScriptBuilder.createP2WSHOutputScript(hash);
     }
 
     /**

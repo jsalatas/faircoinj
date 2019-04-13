@@ -37,12 +37,12 @@ public class DumpedPrivateKeyTest {
 
     @Test
     public void checkNetwork() throws Exception {
-        DumpedPrivateKey.fromBase58(MAINNET, "5HtUCLMFWNueqN9unpgX2DzjMg6SDNZyKRb8s3LJgpFg5ubuMrk");
+        DumpedPrivateKey.fromBase58(MAINNET, "8UXciJBfCc9KKAvGdJ6gKMCjuK7gLYKfzxLQSUg8hWLNShg3P1K");
     }
 
     @Test(expected = AddressFormatException.WrongNetwork.class)
     public void checkNetworkWrong() throws Exception {
-        DumpedPrivateKey.fromBase58(TESTNET, "5HtUCLMFWNueqN9unpgX2DzjMg6SDNZyKRb8s3LJgpFg5ubuMrk");
+        DumpedPrivateKey.fromBase58(TESTNET, "8UXciJBfCc9KKAvGdJ6gKMCjuK7gLYKfzxLQSUg8hWLNShg3P1K");
     }
 
     @Test
@@ -68,7 +68,7 @@ public class DumpedPrivateKeyTest {
 
     @Test
     public void roundtripBase58() throws Exception {
-        String base58 = "5HtUCLMFWNueqN9unpgX2DzjMg6SDNZyKRb8s3LJgpFg5ubuMrk"; // 32-bytes key
+        String base58 = "8UXciJBfCc9KKAvGdJ6gKMCjuK7gLYKfzxLQSUg8hWLNShg3P1K";
         DumpedPrivateKey dumpedPrivateKey = DumpedPrivateKey.fromBase58(null, base58);
         assertFalse(dumpedPrivateKey.isPubKeyCompressed());
         assertEquals(base58, dumpedPrivateKey.toBase58());

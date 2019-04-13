@@ -27,11 +27,14 @@ public class InventoryItem {
     static final int MESSAGE_LENGTH = 36;
     
     public enum Type {
-        ERROR(0x0), TRANSACTION(0x1), BLOCK(0x2),
+        ERROR(0x0),
+        TRANSACTION(0x1),
+        BLOCK(0x2),
         // BIP37 extension:
         FILTERED_BLOCK(0x3),
-        // BIP44 extensions:
-        WITNESS_TRANSACTION(0x40000001), WITNESS_BLOCK(0x40000002), WITNESS_FILTERED_BLOCK(0x40000003);
+        CVN_PUB_NONCE_POOL(0x4),
+        CVN_SIGNATURE(0x5),
+        POC_CHAIN_DATA(0x6);
 
         public final int code;
 

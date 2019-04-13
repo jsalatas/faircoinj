@@ -58,9 +58,7 @@ public class Script {
     public enum ScriptType {
         P2PKH(1), // pay to pubkey hash (aka pay to address)
         P2PK(2), // pay to pubkey
-        P2SH(3), // pay to script hash
-        P2WPKH(4), // pay to witness pubkey hash
-        P2WSH(5); // pay to witness script hash
+        P2SH(3); // pay to script hash
 
         public final int id;
 
@@ -255,8 +253,6 @@ public class Script {
             return ScriptPattern.extractHashFromP2PKH(this);
         else if (ScriptPattern.isP2SH(this))
             return ScriptPattern.extractHashFromP2SH(this);
-        else if (ScriptPattern.isP2WH(this))
-            return ScriptPattern.extractHashFromP2WH(this);
         else
             throw new ScriptException(ScriptError.SCRIPT_ERR_UNKNOWN_ERROR, "Script not in the standard scriptPubKey form");
     }
@@ -303,8 +299,6 @@ public class Script {
             return LegacyAddress.fromScriptHash(params, ScriptPattern.extractHashFromP2SH(this));
         else if (forcePayToPubKey && ScriptPattern.isP2PK(this))
             return LegacyAddress.fromKey(params, ECKey.fromPublicOnly(ScriptPattern.extractKeyFromP2PK(this)));
-        else if (ScriptPattern.isP2WH(this))
-            return SegwitAddress.fromHash(params, ScriptPattern.extractHashFromP2WH(this));
         else
             throw new ScriptException(ScriptError.SCRIPT_ERR_UNKNOWN_ERROR, "Cannot cast this script to an address");
     }
@@ -387,25 +381,11 @@ public class Script {
         if (ScriptPattern.isP2PKH(this)) {
             checkArgument(key != null, "Key required to create P2PKH input script");
             return ScriptBuilder.createInputScript(null, key);
-        } else if (ScriptPattern.isP2WPKH(this)) {
-            return ScriptBuilder.createEmpty();
         } else if (ScriptPattern.isP2PK(this)) {
             return ScriptBuilder.createInputScript(null);
         } else if (ScriptPattern.isP2SH(this)) {
             checkArgument(redeemScript != null, "Redeem script required to create P2SH input script");
             return ScriptBuilder.createP2SHMultiSigInputScript(null, redeemScript);
-        } else {
-            throw new ScriptException(ScriptError.SCRIPT_ERR_UNKNOWN_ERROR, "Do not understand script type: " + this);
-        }
-    }
-
-    public TransactionWitness createEmptyWitness(ECKey key) {
-        if (ScriptPattern.isP2WPKH(this)) {
-            checkArgument(key != null, "Key required to create P2WPKH witness");
-            return TransactionWitness.EMPTY;
-        } else if (ScriptPattern.isP2PK(this) || ScriptPattern.isP2PKH(this)
-                || ScriptPattern.isP2SH(this)) {
-            return null; // no witness
         } else {
             throw new ScriptException(ScriptError.SCRIPT_ERR_UNKNOWN_ERROR, "Do not understand script type: " + this);
         }
@@ -621,11 +601,6 @@ public class Script {
             // scriptSig: <sig> <pubkey>
             int uncompressedPubKeySize = 65; // very conservative
             return SIG_SIZE + (pubKey != null ? pubKey.getPubKey().length : uncompressedPubKeySize);
-        } else if (ScriptPattern.isP2WPKH(this)) {
-            // scriptSig is empty
-            // witness: <sig> <pubKey>
-            int compressedPubKeySize = 33;
-            return SIG_SIZE + (pubKey != null ? pubKey.getPubKey().length : compressedPubKeySize);
         } else {
             throw new IllegalStateException("Unsupported script type");
         }
@@ -763,7 +738,7 @@ public class Script {
     /**
      * Exposes the script interpreter. Normally you should not use this directly, instead use
      * {@link TransactionInput#verify(TransactionOutput)} or
-     * {@link Script#correctlySpends(Transaction, int, TransactionWitness, Coin, Script, Set)}. This method
+     * {@link Script#correctlySpends(Transaction, int, Script, Set)}. This method
      * is useful if you need more precise control or access to the final state of the stack. This interface is very
      * likely to change in future.
      *
@@ -783,7 +758,7 @@ public class Script {
     /**
      * Exposes the script interpreter. Normally you should not use this directly, instead use
      * {@link TransactionInput#verify(TransactionOutput)} or
-     * {@link Script#correctlySpends(Transaction, int, TransactionWitness, Coin, Script, Set)}. This method
+     * {@link Script#correctlySpends(Transaction, int, Script, Set)}. This method
      * is useful if you need more precise control or access to the final state of the stack. This interface is very
      * likely to change in future.
      */
@@ -1545,7 +1520,7 @@ public class Script {
      *                         Accessing txContainingThis from another thread while this method runs results in undefined behavior.
      * @param scriptSigIndex The index in txContainingThis of the scriptSig (note: NOT the index of the scriptPubKey).
      * @param scriptPubKey The connected scriptPubKey containing the conditions needed to claim the value.
-     * @deprecated Use {@link #correctlySpends(Transaction, int, TransactionWitness, Coin, Script, Set)}
+     * @deprecated Use {@link #correctlySpends(Transaction, int, Script, Set)}
      * instead so that verification flags do not change as new verification options
      * are added.
      */
@@ -1555,41 +1530,18 @@ public class Script {
         correctlySpends(txContainingThis, scriptSigIndex, scriptPubKey, ALL_VERIFY_FLAGS);
     }
 
-    /**
-     * Verifies that this script (interpreted as a scriptSig) correctly spends the given scriptPubKey.
-     * @param txContainingThis The transaction in which this input scriptSig resides.
-     *                         Accessing txContainingThis from another thread while this method runs results in undefined behavior.
-     * @param scriptSigIndex The index in txContainingThis of the scriptSig (note: NOT the index of the scriptPubKey).
-     * @param scriptPubKey The connected scriptPubKey containing the conditions needed to claim the value.
-     * @param witness Transaction witness belonging to the transaction input containing this script. Needed for SegWit.
-     * @param value Value of the output. Needed for SegWit scripts.
-     * @param verifyFlags Each flag enables one validation rule.
-     */
-    public void correctlySpends(Transaction txContainingThis, int scriptSigIndex, @Nullable TransactionWitness witness, @Nullable Coin value,
-            Script scriptPubKey, Set<VerifyFlag> verifyFlags) throws ScriptException {
-        if (ScriptPattern.isP2WPKH(scriptPubKey)) {
-            // For SegWit, full validation isn't implemented. So we simply check the signature. P2SH_P2WPKH is handled
-            // by the P2SH code for now.
-            if (witness.getPushCount() < 2)
-                throw new ScriptException(ScriptError.SCRIPT_ERR_WITNESS_PROGRAM_WITNESS_EMPTY, witness.toString());
-            TransactionSignature signature;
-            try {
-                signature = TransactionSignature.decodeFromBitcoin(witness.getPush(0), true, true);
-            } catch (SignatureDecodeException x) {
-                throw new ScriptException(ScriptError.SCRIPT_ERR_SIG_DER, "Cannot decode", x);
-            }
-            ECKey pubkey = ECKey.fromPublicOnly(witness.getPush(1));
-            Script scriptCode = new ScriptBuilder().data(ScriptBuilder.createP2PKHOutputScript(pubkey).getProgram())
-                    .build();
-            Sha256Hash sigHash = txContainingThis.hashForWitnessSignature(scriptSigIndex, scriptCode, value,
-                    signature.sigHashMode(), false);
-            boolean validSig = pubkey.verify(sigHash, signature);
-            if (!validSig)
-                throw new ScriptException(ScriptError.SCRIPT_ERR_CHECKSIGVERIFY, "Invalid signature");
-        } else {
-            correctlySpends(txContainingThis, scriptSigIndex, scriptPubKey, verifyFlags);
-        }
-    }
+//    /**
+//     * Verifies that this script (interpreted as a scriptSig) correctly spends the given scriptPubKey.
+//     * @param txContainingThis The transaction in which this input scriptSig resides.
+//     *                         Accessing txContainingThis from another thread while this method runs results in undefined behavior.
+//     * @param scriptSigIndex The index in txContainingThis of the scriptSig (note: NOT the index of the scriptPubKey).
+//     * @param scriptPubKey The connected scriptPubKey containing the conditions needed to claim the value.
+//     * @param verifyFlags Each flag enables one validation rule.
+//     */
+//    public void correctlySpends(Transaction txContainingThis, int scriptSigIndex, Script scriptPubKey, Set<VerifyFlag> verifyFlags) throws ScriptException {
+//
+//        correctlySpends(txContainingThis, scriptSigIndex, scriptPubKey, verifyFlags);
+//    }
 
     /**
      * Verifies that this script (interpreted as a scriptSig) correctly spends the given scriptPubKey.
@@ -1678,10 +1630,6 @@ public class Script {
             return ScriptType.P2PK;
         if (ScriptPattern.isP2SH(this))
             return ScriptType.P2SH;
-        if (ScriptPattern.isP2WPKH(this))
-            return ScriptType.P2WPKH;
-        if (ScriptPattern.isP2WSH(this))
-            return ScriptType.P2WSH;
         return null;
     }
 

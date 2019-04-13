@@ -39,7 +39,7 @@ Usage: wallet-tool --flags action-name
                        You can repeat --output=address:value multiple times.
                        There is a magic value ALL which empties the wallet to that address, e.g.:
                          --output=1GthXFQMktFLWdh5EPNGqbq3H6WdG8zsWj:ALL
-                       The output destination can also be a native segwit address.
+                       The output destination.
                        If the output destination starts with 04 and is 65 or 33 bytes long it will be
                        treated as a public key instead of an address and the send will use
                        <key> CHECKSIG as the script.
@@ -103,7 +103,7 @@ Usage: wallet-tool --flags action-name
   --chain=<file>       Specifies the name of the file that stores the block chain.
   --force              Overrides any safety checks on the requested action.
   --date               Provide a date in form YYYY/MM/DD to any action that requires one.
-  --output-script-type Provide an output script type to any action that requires one. May be P2PKH or P2WPKH.
+  --output-script-type Provide an output script type to any action that requires one. May be P2PKH.
   --peers=1.2.3.4      Comma separated IP addresses/domain names for connections instead of peer discovery.
   --offline            If specified when sending, don't try and connect, just write the tx to the wallet.
   --condition=...      Allows you to specify a numeric condition for other commands. The format is

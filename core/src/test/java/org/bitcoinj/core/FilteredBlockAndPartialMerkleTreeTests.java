@@ -52,9 +52,9 @@ public class FilteredBlockAndPartialMerkleTreeTests extends TestWithPeerGroup {
         MemoryBlockStore store = new MemoryBlockStore(UNITTEST);
 
         // Cheat and place the previous block (block 100000) at the head of the block store without supporting blocks
-        store.put(new StoredBlock(new Block(UNITTEST, HEX.decode("0100000050120119172a610421a6c3011dd330d9df07b63616c2cc1f1cd00200000000006657a9252aacd5c0b2940996ecff952228c3067cc38d4885efb5a4ac4247e9f337221b4d4c86041b0f2b5710")),
-                BigInteger.valueOf(1), 100000));
-        store.setChainHead(store.get(Sha256Hash.wrap("000000000003ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506")));
+        store.put(new StoredBlock(new Block(UNITTEST, HEX.decode("01010000f5bcc5661928619c12c1e7d397d94ebc638f86f1ffa2142dae168e325f801363d96c46c45067962af34ea1bc067fe9df6a4d95a7db599fbc2828b4eabe5b71dd758f0c6a987dbe10059fac9670b5b68c8b82b3975dbc7d7ef8235373090ed84f3e90ad580dd001c00201000000010000000000000000000000000000000000000000000000000000000000000000ffffffff07020e1b03cf7c04ffffffff0100093d00000000001976a914e21b612e504b53a9245524d4d8fe0ed55075e38088ac000000000100000002b65b0e0029e5703bb8b8fc76a502d2b1cc037efa3169b48c3ddb6fb595ebe34c000000006a473044022051c30e6fb7a51dd4dd6b0dfab2bea6ce5ba2dc3009380e029a16d802746d27f0022055b2f6cd983d72bf6ba6362b6de86e2520030af1755d53722b5a3cc859e5ff01012102694b31550e3f053caa0e41de1a5f5313a255467eb97dcd997a31106fa575665dffffffffb65b0e0029e5703bb8b8fc76a502d2b1cc037efa3169b48c3ddb6fb595ebe34c010000006a473044022004a204b957c876aec194a929630b16e11505215414d8c8bdc3c6764ef0a226b102205f8aebcb5b45cb5aa4d08dcb3ba07d0f7fc0d9638aae2b324e093a2f73d6c02d01210351f0b1ba81f48a34a1ee10c5f8d63d17f5d4c3bb9f959425ef25d6b365c769cbffffffff02a0c99553020000001976a9141bde0d27c201af999e196a4d6a14e514e19b264488ac00e40b54020000001976a914da8d647f8b5139f1a91a4903de6b6d36b2e1231f88ac000000003b8246e7e96685f32fa85a4f58c66a2d77813dd92d3124017bf069a6c6f99c376e6f5c25416c0b56eb02b662c9587f93db8efbcb7f953350fef0de09312bded300c9ef2b393b405e041547bef8d5ffcdcef884371df079dd8bdf999b2cad62741da907db2d49d9140ad718b2be044af03cba36feb8c4c631204ccd53985f3e879f")),
+                BigInteger.valueOf(1), 6926));
+        store.setChainHead(store.get(Sha256Hash.wrap("357c8964e2aac31744c4e2b709d0cf103e98f2ee5c9a322cf807ab787a578b81")));
 
         KeyChainGroup group = KeyChainGroup.builder(UNITTEST).build();
         group.importKeys(ECKey.fromPublicOnly(HEX.decode("04b27f7e9475ccf5d9a431cb86d665b8302c140144ec2397fce792f4a4e7765fecf8128534eaa71df04f93c74676ae8279195128a1506ebf7379d23dab8fca0f63")),
@@ -66,6 +66,7 @@ public class FilteredBlockAndPartialMerkleTreeTests extends TestWithPeerGroup {
         super.setUp(store);
     }
 
+    @Override
     @After
     public void tearDown() {
         super.tearDown();

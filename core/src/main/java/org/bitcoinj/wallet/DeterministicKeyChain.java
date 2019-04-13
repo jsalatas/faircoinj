@@ -361,8 +361,7 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
      */
     protected DeterministicKeyChain(DeterministicSeed seed, @Nullable KeyCrypter crypter,
             Script.ScriptType outputScriptType, ImmutableList<ChildNumber> accountPath) {
-        checkArgument(outputScriptType == null || outputScriptType == Script.ScriptType.P2PKH
-                || outputScriptType == Script.ScriptType.P2WPKH, "Only P2PKH or P2WPKH allowed.");
+        checkArgument(outputScriptType == null || outputScriptType == Script.ScriptType.P2PKH , "Only P2PKH allowed.");
         this.outputScriptType = outputScriptType != null ? outputScriptType : Script.ScriptType.P2PKH;
         this.accountPath = accountPath;
         this.seed = seed;

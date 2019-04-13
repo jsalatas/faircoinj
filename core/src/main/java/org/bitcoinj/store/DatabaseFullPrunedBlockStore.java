@@ -1150,7 +1150,6 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
             maybeConnect();
             s = conn.get().prepareStatement(getTransactionOutputSelectSQL());
             for (ECKey key : keys) {
-                // TODO switch to pubKeyHash in order to support native segwit addresses
                 s.setString(1, LegacyAddress.fromKey(params, key).toString());
                 ResultSet rs = s.executeQuery();
                 while (rs.next()) {

@@ -25,7 +25,6 @@ import org.bitcoinj.core.LegacyAddress;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionInput;
 import org.bitcoinj.core.TransactionOutput;
-import org.bitcoinj.core.TransactionWitness;
 import org.bitcoinj.crypto.DeterministicKey;
 import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.script.Script;
@@ -82,8 +81,7 @@ public class LocalTransactionSigner implements TransactionSigner {
                 // We assume if its already signed, its hopefully got a SIGHASH type that will not invalidate when
                 // we sign missing pieces (to check this would require either assuming any signatures are signing
                 // standard output types or a way to get processed signatures out of script execution)
-                txIn.getScriptSig().correctlySpends(tx, i, txIn.getWitness(), connectedOutput.getValue(),
-                        connectedOutput.getScriptPubKey(), MINIMUM_VERIFY_FLAGS);
+                txIn.getScriptSig().correctlySpends(tx, i, connectedOutput.getScriptPubKey(), MINIMUM_VERIFY_FLAGS);
                 log.warn("Input {} already correctly spends output, assuming SIGHASH type used will be safe and skipping signing.", i);
                 continue;
             } catch (ScriptException e) {
@@ -129,16 +127,6 @@ public class LocalTransactionSigner implements TransactionSigner {
                     inputScript = scriptPubKey.getScriptSigWithSignature(inputScript, signature.encodeToBitcoin(),
                             sigIndex);
                     txIn.setScriptSig(inputScript);
-                    txIn.setWitness(null);
-                } else if (ScriptPattern.isP2WPKH(scriptPubKey)) {
-                    Script scriptCode = new ScriptBuilder().data(
-                            ScriptBuilder.createOutputScript(LegacyAddress.fromKey(tx.getParams(), key)).getProgram())
-                            .build();
-                    Coin value = txIn.getValue();
-                    TransactionSignature signature = tx.calculateWitnessSignature(i, key, scriptCode, value,
-                            Transaction.SigHash.ALL, false);
-                    txIn.setScriptSig(ScriptBuilder.createEmpty());
-                    txIn.setWitness(TransactionWitness.redeemP2WPKH(signature, key));
                 } else {
                     throw new IllegalStateException(script.toString());
                 }

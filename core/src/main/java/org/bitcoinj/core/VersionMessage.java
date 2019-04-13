@@ -51,12 +51,8 @@ public class VersionMessage extends Message {
     public static final int NODE_GETUTXOS = 1 << 1;
     /** A service bit that denotes whether the peer supports BIP37 bloom filters or not. The service bit is defined in BIP111. */
     public static final int NODE_BLOOM = 1 << 2;
-    /** Indicates that a node can be asked for blocks and transactions including witness data. */
-    public static final int NODE_WITNESS = 1 << 3;
-    /** A service bit that denotes whether the peer has at least the last two days worth of blockchain (BIP159). */
-    public static final int NODE_NETWORK_LIMITED = 1 << 10;
-    /** A service bit used by Bitcoin-ABC to announce Bitcoin Cash nodes. */
-    public static final int NODE_BITCOIN_CASH = 1 << 5;
+
+    public static final int NODE_POC_DATA = 1 << 3;
 
     /**
      * The version number of the protocol spoken.
@@ -278,23 +274,13 @@ public class VersionMessage extends Message {
      * Returns true if the peer supports bloom filtering according to BIP37 and BIP111.
      */
     public boolean isBloomFilteringSupported() {
-        if (clientVersion >= params.getProtocolVersionNum(NetworkParameters.ProtocolVersion.BLOOM_FILTER)
-                && clientVersion < params.getProtocolVersionNum(NetworkParameters.ProtocolVersion.BLOOM_FILTER_BIP111))
-            return true;
-        if ((localServices & NODE_BLOOM) == NODE_BLOOM)
-            return true;
-        return false;
+        return clientVersion >= params.getProtocolVersionNum(NetworkParameters.ProtocolVersion.BLOOM_FILTER);
     }
 
     /** Returns true if the protocol version and service bits both indicate support for the getutxos message. */
     public boolean isGetUTXOsSupported() {
         return clientVersion >= GetUTXOsMessage.MIN_PROTOCOL_VERSION &&
                 (localServices & NODE_GETUTXOS) == NODE_GETUTXOS;
-    }
-
-    /** Returns true if a peer can be asked for blocks and transactions including witness data. */
-    public boolean isWitnessSupported() {
-        return (localServices & NODE_WITNESS) == NODE_WITNESS;
     }
 
     /**
@@ -305,8 +291,4 @@ public class VersionMessage extends Message {
         return (localServices & NODE_NETWORK) == NODE_NETWORK;
     }
 
-    /** Returns true if the peer has at least the last two days worth of blockchain (BIP159). */
-    public boolean hasLimitedBlockChain() {
-        return hasBlockChain() || (localServices & NODE_NETWORK_LIMITED) == NODE_NETWORK_LIMITED;
-    }
 }

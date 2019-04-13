@@ -18,7 +18,6 @@
 package org.bitcoinj.script;
 
 import org.bitcoinj.core.LegacyAddress;
-import org.bitcoinj.core.SegwitAddress;
 import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Utils;
 
@@ -141,62 +140,6 @@ public class ScriptPattern {
     }
 
     /**
-     * Returns true if this script is of the form {@code OP_0 <hash>}. This can either be a P2WPKH or P2WSH scriptPubKey. These
-     * two script types were introduced with segwit.
-     */
-    public static boolean isP2WH(Script script) {
-        List<ScriptChunk> chunks = script.chunks;
-        if (chunks.size() != 2)
-            return false;
-        if (!chunks.get(0).equalsOpCode(OP_0))
-            return false;
-        byte[] chunk1data = chunks.get(1).data;
-        if (chunk1data == null)
-            return false;
-        if (chunk1data.length != SegwitAddress.WITNESS_PROGRAM_LENGTH_PKH
-                && chunk1data.length != SegwitAddress.WITNESS_PROGRAM_LENGTH_SH)
-            return false;
-        return true;
-    }
-
-    /**
-     * Returns true if this script is of the form {@code OP_0 <hash>} and hash is 20 bytes long. This can only be a P2WPKH
-     * scriptPubKey. This script type was introduced with segwit.
-     */
-    public static boolean isP2WPKH(Script script) {
-        if (!isP2WH(script))
-            return false;
-        List<ScriptChunk> chunks = script.chunks;
-        if (!chunks.get(0).equalsOpCode(OP_0))
-            return false;
-        byte[] chunk1data = chunks.get(1).data;
-        return chunk1data != null && chunk1data.length == SegwitAddress.WITNESS_PROGRAM_LENGTH_PKH;
-    }
-
-    /**
-     * Returns true if this script is of the form {@code OP_0 <hash>} and hash is 32 bytes long. This can only be a P2WSH
-     * scriptPubKey. This script type was introduced with segwit.
-     */
-    public static boolean isP2WSH(Script script) {
-        if (!isP2WH(script))
-            return false;
-        List<ScriptChunk> chunks = script.chunks;
-        if (!chunks.get(0).equalsOpCode(OP_0))
-            return false;
-        byte[] chunk1data = chunks.get(1).data;
-        return chunk1data != null && chunk1data.length == SegwitAddress.WITNESS_PROGRAM_LENGTH_SH;
-    }
-
-    /**
-     * Extract the pubkey hash from a P2WPKH or the script hash from a P2WSH scriptPubKey. It's important that the
-     * script is in the correct form, so you will want to guard calls to this method with
-     * {@link #isP2WH(Script)}.
-     */
-    public static byte[] extractHashFromP2WH(Script script) {
-        return script.chunks.get(1).data;
-    }
-
-    /**
      * Returns whether this script matches the format used for multisig outputs:
      * {@code [n] [keys...] [m] CHECKMULTISIG}
      */
@@ -276,32 +219,5 @@ public class ScriptPattern {
     public static boolean isOpReturn(Script script) {
         List<ScriptChunk> chunks = script.chunks;
         return chunks.size() > 0 && chunks.get(0).equalsOpCode(ScriptOpCodes.OP_RETURN);
-    }
-
-    private static final byte[] SEGWIT_COMMITMENT_HEADER = Utils.HEX.decode("aa21a9ed");
-
-    /**
-     * Returns whether this script matches the pattern for a segwit commitment (in an output of the coinbase
-     * transaction).
-     */
-    public static boolean isWitnessCommitment(Script script) {
-        List<ScriptChunk> chunks = script.chunks;
-        if (chunks.size() < 2)
-            return false;
-        if (!chunks.get(0).equalsOpCode(ScriptOpCodes.OP_RETURN))
-            return false;
-        byte[] chunkData = chunks.get(1).data;
-        if (chunkData == null || chunkData.length != 36)
-            return false;
-        if (!Arrays.equals(Arrays.copyOfRange(chunkData, 0, 4), SEGWIT_COMMITMENT_HEADER))
-            return false;
-        return true;
-    }
-
-    /**
-     * Retrieves the hash from a segwit commitment (in an output of the coinbase transaction).
-     */
-    public static Sha256Hash extractWitnessCommitmentHash(Script script) {
-        return Sha256Hash.wrap(Arrays.copyOfRange(script.chunks.get(1).data, 4, 36));
     }
 }

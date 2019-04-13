@@ -37,7 +37,7 @@ public class HeadersMessage extends Message {
     private static final Logger log = LoggerFactory.getLogger(HeadersMessage.class);
 
     // The main client will never send us more than this number of headers.
-    public static final int MAX_HEADERS = 2000;
+    public static final int MAX_HEADERS = 500;
 
     private List<Block> blockHeaders;
 
@@ -77,7 +77,7 @@ public class HeadersMessage extends Message {
         for (int i = 0; i < numHeaders; ++i) {
             final Block newBlockHeader = serializer.makeBlock(payload, cursor, UNKNOWN_LENGTH);
             if (newBlockHeader.hasTransactions()) {
-                throw new ProtocolException("Block header does not end with a null byte");
+                throw new ProtocolException("Block header does contain transactions");
             }
             cursor += newBlockHeader.optimalEncodingMessageSize;
             blockHeaders.add(newBlockHeader);

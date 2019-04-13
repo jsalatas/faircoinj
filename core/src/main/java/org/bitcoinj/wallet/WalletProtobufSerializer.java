@@ -28,7 +28,6 @@ import org.bitcoinj.core.TransactionConfidence.ConfidenceType;
 import org.bitcoinj.core.TransactionInput;
 import org.bitcoinj.core.TransactionOutPoint;
 import org.bitcoinj.core.TransactionOutput;
-import org.bitcoinj.core.TransactionWitness;
 import org.bitcoinj.crypto.KeyCrypter;
 import org.bitcoinj.crypto.KeyCrypterScrypt;
 import org.bitcoinj.script.Script;
@@ -276,14 +275,6 @@ public class WalletProtobufSerializer {
                 inputBuilder.setSequence((int) input.getSequenceNumber());
             if (input.getValue() != null)
                 inputBuilder.setValue(input.getValue().value);
-            if (input.hasWitness()) {
-                TransactionWitness witness = input.getWitness();
-                Protos.ScriptWitness.Builder witnessBuilder = Protos.ScriptWitness.newBuilder();
-                int pushCount = witness.getPushCount();
-                for (int i = 0; i < pushCount; i++)
-                    witnessBuilder.addData(ByteString.copyFrom(witness.getPush(i)));
-                inputBuilder.setWitness(witnessBuilder);
-            }
             txBuilder.addTransactionInput(inputBuilder);
         }
 
@@ -492,6 +483,14 @@ public class WalletProtobufSerializer {
         if (!walletProto.getNetworkIdentifier().equals(params.getId()))
             throw new UnreadableWalletException.WrongNetwork();
 
+        // detect FairCoin1 wallet
+        boolean fairCoin1Upgrade = false;
+        if (walletProto.getVersion() == 0) {
+            log.info("FairCoin1 wallet detected. Forcing upgrade");
+            forceReset = true;
+            fairCoin1Upgrade = true;
+        }
+
         // Read the scrypt parameters that specify how encryption and decryption is performed.
         KeyChainGroup keyChainGroup;
         if (walletProto.hasEncryptionParameters()) {
@@ -526,6 +525,9 @@ public class WalletProtobufSerializer {
             wallet.setLastBlockSeenHash(null);
             wallet.setLastBlockSeenHeight(-1);
             wallet.setLastBlockSeenTimeSecs(0);
+            if (fairCoin1Upgrade) {
+                wallet.setFairCoin1Upgrade(true);
+            }
         } else {
             // Read all transactions and insert into the txMap.
             for (Protos.Transaction txProto : walletProto.getTransactionList()) {
@@ -563,7 +565,9 @@ public class WalletProtobufSerializer {
             wallet.setTag(tag.getTag(), tag.getData());
         }
 
-        if (walletProto.hasVersion()) {
+        if (forceReset) {
+            wallet.setVersion(CURRENT_WALLET_VERSION);
+        } else if (walletProto.hasVersion()) {
             wallet.setVersion(walletProto.getVersion());
         }
 
@@ -648,15 +652,6 @@ public class WalletProtobufSerializer {
             TransactionInput input = new TransactionInput(params, tx, scriptBytes, outpoint, value);
             if (inputProto.hasSequence())
                 input.setSequenceNumber(0xffffffffL & inputProto.getSequence());
-            if (inputProto.hasWitness()) {
-                Protos.ScriptWitness witnessProto = inputProto.getWitness();
-                if (witnessProto.getDataCount() > 0) {
-                    TransactionWitness witness = new TransactionWitness(witnessProto.getDataCount());
-                    for (int j = 0; j < witnessProto.getDataCount(); j++)
-                        witness.setPush(j, witnessProto.getData(j).toByteArray());
-                    input.setWitness(witness);
-                }
-            }
             tx.addInput(input);
         }
 

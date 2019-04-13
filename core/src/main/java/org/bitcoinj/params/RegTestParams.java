@@ -36,10 +36,7 @@ public class RegTestParams extends AbstractBitcoinNetParams {
         p2shHeader = 196;
         targetTimespan = TARGET_TIMESPAN;
         dumpedPrivateKeyHeader = 239;
-        segwitAddressHrp = "bcrt";
         genesisBlock.setTime(1296688602L);
-        genesisBlock.setDifficultyTarget(0x1d07fff8L);
-        genesisBlock.setNonce(384568319);
         spendableCoinbaseDepth = 100;
         String genesisHash = genesisBlock.getHashAsString();
         checkState(genesisHash.equals("00000007199508e34a9ff81e6ec0c477a4cccff2a4767a8eee39c11db367b008"));
@@ -47,8 +44,6 @@ public class RegTestParams extends AbstractBitcoinNetParams {
         addrSeeds = null;
         bip32HeaderP2PKHpub = 0x043587cf; // The 4 byte header that serializes in base58 to "tpub".
         bip32HeaderP2PKHpriv = 0x04358394; // The 4 byte header that serializes in base58 to "tprv"
-        bip32HeaderP2WPKHpub = 0x045f1cf6; // The 4 byte header that serializes in base58 to "vpub".
-        bip32HeaderP2WPKHpriv = 0x045f18bc; // The 4 byte header that serializes in base58 to "vprv"
 
         // Difficulty adjustments are disabled for regtest.
         // By setting the block interval for difficulty adjustments to Integer.MAX_VALUE we make sure difficulty never
@@ -76,10 +71,10 @@ public class RegTestParams extends AbstractBitcoinNetParams {
         synchronized (RegTestParams.class) {
             if (genesis == null) {
                 genesis = super.getGenesisBlock();
-                genesis.setNonce(2);
-                genesis.setDifficultyTarget(0x207fFFFFL);
-                genesis.setTime(1296688602L);
-                checkState(genesis.getHashAsString().toLowerCase().equals("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
+                /*genesis.setNonce(2);
+                genesis.setDifficultyTarget(0x207fFFFFL);*/
+                genesis.setTime(GENESIS_BLOCK_TIMESTAMP + 2);
+                checkState(genesis.getHashAsString().toLowerCase().equals("c69948f41cf0f402dc3ce9513416d0444cc025bbf1ade86c7704e8506ab54b40"));
             }
             return genesis;
         }
