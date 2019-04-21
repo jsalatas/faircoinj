@@ -54,7 +54,7 @@ public class SchnorrPublicKey implements Serializable, Comparable<SchnorrPublicK
     /**
      * Creates a new instance that wraps the given hash value.
      *
-     * @param rawHashBytes the raw hash bytes to wrap
+     * @param rawSigBytes the raw hash bytes to wrap
      * @return a new instance
      * @throws IllegalArgumentException if the given array length is not exactly 32
      */

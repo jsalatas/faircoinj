@@ -58,7 +58,7 @@ public class DynamicChainParameters implements Serializable {
 
     /** A short description of the changes
      * A description string should be built like this:
-     * #nnnnn <URI to a document where the decision is documented> <text that describes the change> */
+     * #nnnnn &lt;URI to a document where the decision is documented&gt; &lt;text that describes the change&gt; */
     private String description;
 
 	public long getVersion() {
