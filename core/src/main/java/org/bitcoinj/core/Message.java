@@ -17,6 +17,7 @@
 
 package org.bitcoinj.core;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,6 +93,7 @@ public abstract class Message {
         this.protocolVersion = protocolVersion;
         this.params = params;
         this.payload = payload;
+        System.out.println(Hex.toHexString(payload));
         this.cursor = this.offset = offset;
         this.length = length;
 

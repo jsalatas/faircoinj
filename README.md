@@ -1,14 +1,10 @@
-[![Build Status](https://travis-ci.org/bitcoinj/bitcoinj.png?branch=master)](https://travis-ci.org/bitcoinj/bitcoinj)   [![Coverage Status](https://coveralls.io/repos/bitcoinj/bitcoinj/badge.png?branch=master)](https://coveralls.io/r/bitcoinj/bitcoinj?branch=master) 
+### Welcome to faircoinj
 
-[![Visit our IRC channel](https://kiwiirc.com/buttons/irc.freenode.net/bitcoinj.png)](https://kiwiirc.com/client/irc.freenode.net/bitcoinj)
-
-### Welcome to bitcoinj
-
-The bitcoinj library is a Java implementation of the Bitcoin protocol, which allows it to maintain a wallet and send/receive transactions without needing a local copy of Bitcoin Core. It comes with full documentation and some example apps showing how to use it.
+The faircoinj library is a Java implementation of the Bitcoin protocol, which allows it to maintain a wallet and send/receive transactions without needing a local copy of Bitcoin Core. It comes with full documentation and some example apps showing how to use it.
 
 ### Technologies
 
-* Java 7+ and Gradle 3.4+ for the `core` module
+* Java 8+ and Gradle 3.4+ for the `core` module
 * Java 8+ and Gradle 3.4+ for `tools` and `examples`
 * Java 11+ and Gradle 4.10+ for the JavaFX-based `wallettemplate`
 * [Gradle](https://gradle.org/) - for building the project

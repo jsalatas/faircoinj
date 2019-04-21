@@ -31,6 +31,7 @@ import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -53,9 +54,11 @@ public class BlockTest {
     public void setUp() throws Exception {
         new Context(TESTNET);
         // One with some of transactions in, so a good test of the merkle tree hashing.
-        block700000Bytes = ByteStreams.toByteArray(BlockTest.class.getResourceAsStream("block_testnet700000.dat"));
+        InputStream in = BlockTest.class.getResourceAsStream("test.dat");
+        block700000Bytes = ByteStreams.toByteArray(in);
         block700000 = TESTNET.getDefaultSerializer().makeBlock(block700000Bytes);
-        assertEquals("000000000000406178b12a4dea3b27e13b3c4fe4510994fd667d7c1e6a3f4dc1", block700000.getHashAsString());
+        assertEquals("cfc6c22076832a47f48602d21d0724925fbb86426adf3cd894a2c3a3690779cb", block700000.getHashAsString());
+        System.out.println();
     }
 
     @Test

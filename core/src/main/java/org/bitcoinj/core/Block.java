@@ -21,6 +21,7 @@ import com.google.common.annotations.*;
 import com.google.common.base.*;
 import com.google.common.collect.*;
 import org.bitcoinj.script.*;
+import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.*;
 
 import javax.annotation.*;
@@ -345,13 +346,19 @@ public class Block extends Message {
         dynamicChainParams = p;
     }
 
+
     @Override
     protected void parse() throws ProtocolException {
         // header
         cursor = offset;
+
+        System.out.println(">>>>>>>>>>>>> " + Hex.toHexString(payload));
         version = readUint32();
+        System.out.println(">>>>>>>>>>>>> " + Hex.toHexString(payload));
         prevBlockHash = readHash();
+        System.out.println(">>>>>>>>>>>>> " + Hex.toHexString(payload));
         merkleRoot = readHash();
+        System.out.println(">>>>>>>>>>>>> " + Hex.toHexString(payload));
         hashPayload = readHash();
         time = readUint32();
         creatorId = readUint32();
@@ -408,6 +415,8 @@ public class Block extends Message {
         stream.write(prevBlockHash.getReversedBytes());
         stream.write(getMerkleRoot().getReversedBytes());
         stream.write(hashPayload.getReversedBytes());
+        //stream.write((chainMultiSig == null? SchnorrSignature.ALL_ZERO : chainMultiSig).getReversedBytes());
+
         Utils.uint32ToByteStreamLE(time, stream);
         Utils.uint32ToByteStreamLE(creatorId, stream);
     }
@@ -928,7 +937,7 @@ public class Block extends Message {
     public Sha256Hash getMerkleRoot() {
         if (merkleRoot == null) {
             //TODO check if this is really necessary.
-            unCacheHeader();
+            // unCacheHeader();
             merkleRoot = calculateMerkleRoot();
         }
         return merkleRoot;

@@ -27,7 +27,11 @@ import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.MemoryBlockStore;
 import org.bitcoinj.utils.BriefLogFormatter;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
+import java.net.URL;
 import java.util.List;
 import java.util.concurrent.Future;
 
@@ -43,7 +47,7 @@ public class FetchBlock {
         // Parse command line arguments
         OptionParser parser = new OptionParser();
         OptionSet opts = null;
-        List<byte[]> nonOpts = null;
+        List<String> nonOpts = null;
         try {
             parser.accepts("localhost", "Connect to the localhost node");
             parser.accepts("help", "Displays program options");
@@ -53,7 +57,7 @@ public class FetchBlock {
                 parser.printHelpOn(System.out);
                 return;
             }
-            nonOpts = (List<byte[]>) opts.nonOptionArguments();
+            nonOpts = (List<String>) opts.nonOptionArguments();
             if (nonOpts.size() != 1) {
                 throw new IllegalArgumentException("Incorrect number of block hash, please provide only one block hash.");
             }
@@ -86,6 +90,13 @@ public class FetchBlock {
         System.out.println("Waiting for node to send us the requested block: " + blockHash);
         Block block = future.get();
         System.out.println(block);
+
+        File file = new File("/tmp/serialized");
+        OutputStream output = new FileOutputStream(file);
+        block.bitcoinSerialize(output);
+        output.flush();
+        output.close();
+
         peerGroup.stopAsync();
     }
 }

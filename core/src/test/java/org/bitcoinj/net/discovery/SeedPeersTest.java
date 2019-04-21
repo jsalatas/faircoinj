@@ -19,6 +19,7 @@ package org.bitcoinj.net.discovery;
 
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.params.MainNetParams;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
@@ -28,6 +29,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
+@Ignore("There are no seed peers in faircoin")
 public class SeedPeersTest {
     private static final NetworkParameters MAINNET = MainNetParams.get();
 
