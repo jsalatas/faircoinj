@@ -21,15 +21,14 @@ import com.google.common.annotations.*;
 import com.google.common.base.*;
 import com.google.common.collect.*;
 import org.bitcoinj.script.*;
-import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.*;
 
 import javax.annotation.*;
 import java.io.*;
 import java.math.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import static com.google.common.base.Preconditions.checkState;
 import static org.bitcoinj.core.Coin.*;
 import static org.bitcoinj.core.Sha256Hash.*;
 
@@ -283,12 +282,15 @@ public class Block extends Message {
         if (numIds == 0)
             return;
 
+        if (missingIds) {
+            missingSignerIds = new HashSet<>(numIds);
+        } else {
+            adminIds = new HashSet<>(numIds);
+        }
         for (int i = 0; i < numIds; i++) {
             if (missingIds) {
-                missingSignerIds = new HashSet<>(numIds);
                 missingSignerIds.add(readUint32());
             } else {
-                adminIds = new HashSet<>(numIds);
                 adminIds.add(readUint32());
             }
         }
@@ -351,14 +353,9 @@ public class Block extends Message {
     protected void parse() throws ProtocolException {
         // header
         cursor = offset;
-
-        System.out.println(">>>>>>>>>>>>> " + Hex.toHexString(payload));
         version = readUint32();
-        System.out.println(">>>>>>>>>>>>> " + Hex.toHexString(payload));
         prevBlockHash = readHash();
-        System.out.println(">>>>>>>>>>>>> " + Hex.toHexString(payload));
         merkleRoot = readHash();
-        System.out.println(">>>>>>>>>>>>> " + Hex.toHexString(payload));
         hashPayload = readHash();
         time = readUint32();
         creatorId = readUint32();
@@ -415,8 +412,6 @@ public class Block extends Message {
         stream.write(prevBlockHash.getReversedBytes());
         stream.write(getMerkleRoot().getReversedBytes());
         stream.write(hashPayload.getReversedBytes());
-        //stream.write((chainMultiSig == null? SchnorrSignature.ALL_ZERO : chainMultiSig).getReversedBytes());
-
         Utils.uint32ToByteStreamLE(time, stream);
         Utils.uint32ToByteStreamLE(creatorId, stream);
     }
@@ -439,6 +434,69 @@ public class Block extends Message {
             for (Transaction tx : transactions) {
                 tx.bitcoinSerialize(stream);
             }
+        }
+    }
+
+    private void writeAdditional(OutputStream stream) throws IOException {
+        stream.write(chainMultiSig.getReversedBytes());
+
+        if(missingSignerIds != null) {
+            stream.write(new VarInt(missingSignerIds.size()).encode());
+            for (Long missingSignerId : missingSignerIds) {
+                Utils.uint32ToByteStreamLE(missingSignerId, stream);
+            }
+        } else {
+            stream.write(new VarInt(0).encode());
+        }
+
+        if (hasAdminPayload()) {
+            stream.write(adminMultiSig.getReversedBytes());
+
+            stream.write(new VarInt(adminIds.size()).encode());
+            for (Long adminId : adminIds) {
+                Utils.uint32ToByteStreamLE(adminId, stream);
+            }
+        }
+
+        stream.write(creatorSignature.getReversedBytes());
+
+        if (hasCvnInfo()) {
+            stream.write(new VarInt(cvns.size()).encode());
+            for(CvnInfo cvn: cvns) {
+                Utils.uint32ToByteStreamLE(cvn.getNodeId(), stream);
+                Utils.uint32ToByteStreamLE(cvn.getHeightAdded(), stream);
+                stream.write(cvn.getPubKey().getReversedBytes());
+            }
+        }
+
+        if (hasChainAdmins()) {
+            stream.write(new VarInt(chainAdmins.size()).encode());
+            for(ChainAdmin chainAdmin: chainAdmins) {
+                Utils.uint32ToByteStreamLE(chainAdmin.getAdminId(), stream);
+                Utils.uint32ToByteStreamLE(chainAdmin.getHeightAdded(), stream);
+                stream.write(chainAdmin.getPubKey().getReversedBytes());
+            }
+        }
+
+        if (hasChainParameters()) {
+            Utils.uint32ToByteStreamLE(dynamicChainParams.getVersion(), stream);
+            Utils.uint32ToByteStreamLE(dynamicChainParams.getMinAdminSigs(), stream);
+            Utils.uint32ToByteStreamLE(dynamicChainParams.getMaxAdminSigs(), stream);
+            Utils.uint32ToByteStreamLE(dynamicChainParams.getBlockSpacing(), stream);
+            Utils.uint32ToByteStreamLE(dynamicChainParams.getBlockSpacingGracePeriod(), stream);
+            Utils.int64ToByteStreamLE(dynamicChainParams.getTransactionFee(), stream);
+            Utils.int64ToByteStreamLE(dynamicChainParams.getDustThreshold(), stream);
+            Utils.uint32ToByteStreamLE(dynamicChainParams.getMinSuccessiveSignatures(), stream);
+            Utils.uint32ToByteStreamLE(dynamicChainParams.getBlocksToConsiderForSigCheck(), stream);
+            Utils.uint32ToByteStreamLE(dynamicChainParams.getPercentageOfSignaturesMean(), stream);
+            Utils.uint32ToByteStreamLE(dynamicChainParams.getMaxBlockSize(), stream);
+            Utils.uint32ToByteStreamLE(dynamicChainParams.getBlockPropagationWaitTime(), stream);
+            Utils.uint32ToByteStreamLE(dynamicChainParams.getRetryNewSigSetInterval(), stream);
+            byte[] descriptionBytes = dynamicChainParams.getDescription().getBytes(StandardCharsets.UTF_8);
+            stream.write(new VarInt(descriptionBytes.length).encode());
+            stream.write(descriptionBytes);
+
+            System.err.println("Done!");
         }
     }
 
@@ -467,6 +525,7 @@ public class Block extends Message {
         try {
             writeHeader(stream);
             writeTransactions(stream);
+            writeAdditional(stream);
         } catch (IOException e) {
             // Cannot happen, we are serializing to a memory stream.
         }
@@ -478,6 +537,7 @@ public class Block extends Message {
         writeHeader(stream);
         // We may only have enough data to write the header.
         writeTransactions(stream);
+        writeAdditional(stream);
     }
 
     /**
