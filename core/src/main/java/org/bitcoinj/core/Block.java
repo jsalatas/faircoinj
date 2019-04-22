@@ -438,7 +438,7 @@ public class Block extends Message {
     }
 
     private void writeAdditional(OutputStream stream) throws IOException {
-        stream.write(chainMultiSig.getReversedBytes());
+        stream.write((chainMultiSig==null? SchnorrSignature.ALL_ZERO : chainMultiSig).getReversedBytes());
 
         if(missingSignerIds != null) {
             stream.write(new VarInt(missingSignerIds.size()).encode());
@@ -458,7 +458,7 @@ public class Block extends Message {
             }
         }
 
-        stream.write(creatorSignature.getReversedBytes());
+        stream.write((creatorSignature==null? SchnorrSignature.ALL_ZERO : creatorSignature).getReversedBytes());
 
         if (hasCvnInfo()) {
             stream.write(new VarInt(cvns.size()).encode());
