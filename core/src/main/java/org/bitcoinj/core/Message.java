@@ -361,7 +361,11 @@ public abstract class Message {
     }
 
     protected SchnorrSignature readSignature() throws ProtocolException {
-        return SchnorrSignature.wrap(readBytes(64));
+        byte[] sig = readBytes(64);
+        if(sig.equals(SchnorrSignature.ALL_ZERO)) {
+            return  null;
+        }
+        return SchnorrSignature.wrap(sig);
     }
 
     protected SchnorrPublicKey readPubKey() throws ProtocolException {
