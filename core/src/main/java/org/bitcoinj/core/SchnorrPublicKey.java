@@ -62,6 +62,10 @@ public class SchnorrPublicKey implements Serializable, Comparable<SchnorrPublicK
         return new SchnorrPublicKey(rawSigBytes);
     }
 
+    public static SchnorrPublicKey wrapReversed(byte[] rawSigBytes) {
+        return wrap(Utils.reverseBytes(rawSigBytes));
+    }
+
     /**
      * Creates a new instance that wraps the given hash value (represented as a hex string).
      *

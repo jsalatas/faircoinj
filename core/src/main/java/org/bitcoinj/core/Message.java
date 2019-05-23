@@ -365,11 +365,11 @@ public abstract class Message {
         if(sig.equals(SchnorrSignature.ALL_ZERO)) {
             return  null;
         }
-        return SchnorrSignature.wrap(sig);
+        return SchnorrSignature.wrapReversed(sig);
     }
 
     protected SchnorrPublicKey readPubKey() throws ProtocolException {
-        return SchnorrPublicKey.wrap(readBytes(64));
+        return SchnorrPublicKey.wrapReversed(readBytes(64));
     }
 
     protected SchnorrNonce readNonce() throws ProtocolException {

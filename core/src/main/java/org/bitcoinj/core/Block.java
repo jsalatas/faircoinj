@@ -283,9 +283,9 @@ public class Block extends Message {
             return;
 
         if (missingIds) {
-            missingSignerIds = new HashSet<>(numIds);
+            setMissingSignerIds(new HashSet<>(numIds));
         } else {
-            adminIds = new HashSet<>(numIds);
+            setAdminIds(new HashSet<>(numIds));
         }
         for (int i = 0; i < numIds; i++) {
             if (missingIds) {
@@ -302,7 +302,7 @@ public class Block extends Message {
         if (numEntries == 0)
             return;
 
-        cvns = new ArrayList<>(numEntries);
+        setCvns(new ArrayList<>(numEntries));
         for (int i = 0; i < numEntries; i++) {
             long nodeId = readUint32();
             long heightAdded = readUint32();
@@ -318,7 +318,7 @@ public class Block extends Message {
         if (numEntries == 0)
             return;
 
-        chainAdmins = new ArrayList<>(numEntries);
+        setChainAdmins(new ArrayList<>(numEntries));
         for (int i = 0; i < numEntries; i++) {
             long adminId = readUint32();
             long heightAdded = readUint32();
@@ -345,7 +345,7 @@ public class Block extends Message {
         p.setRetryNewSigSetInterval(readUint32());
         p.setDescription(readStr());
 
-        dynamicChainParams = p;
+        setDynamicChainParams(p);
     }
 
 
@@ -1156,6 +1156,15 @@ public class Block extends Message {
                           final int height) {
         Block b = new Block(params, version);
         b.setCreatorId(creatorId);
+
+        // add additional fields required in FairCoin2
+        b.setCreatorSignature(SchnorrSignature.ALL_ZERO);
+        b.length += 64;
+        b.setChainMultiSig(SchnorrSignature.ALL_ZERO);
+        b.length += 64;
+        // no missingSignerIds
+        b.length += 1;
+
         b.addCoinbaseTransaction(pubKey, coinbaseValue, height);
 
         if (to != null) {

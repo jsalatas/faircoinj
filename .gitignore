@@ -13,3 +13,5 @@ bin/
 out/
 *.chain
 *.spvchain
+
+code_coverage/
