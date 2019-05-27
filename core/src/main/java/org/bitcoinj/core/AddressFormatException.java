@@ -28,7 +28,7 @@ public class AddressFormatException extends IllegalArgumentException {
     }
 
     /**
-     * This exception is thrown by {@link Base58}, {@link Bech32} and the {@link PrefixedChecksummedBytes} hierarchy of
+     * This exception is thrown by {@link Base58} and the {@link PrefixedChecksummedBytes} hierarchy of
      * classes when you try to decode data and a character isn't valid. You shouldn't allow the user to proceed in this
      * case.
      */
@@ -44,7 +44,7 @@ public class AddressFormatException extends IllegalArgumentException {
     }
 
     /**
-     * This exception is thrown by {@link Base58}, {@link Bech32} and the {@link PrefixedChecksummedBytes} hierarchy of
+     * This exception is thrown by {@link Base58} and the {@link PrefixedChecksummedBytes} hierarchy of
      * classes when you try to decode data and the data isn't of the right size. You shouldn't allow the user to proceed
      * in this case.
      */
@@ -59,7 +59,7 @@ public class AddressFormatException extends IllegalArgumentException {
     }
 
     /**
-     * This exception is thrown by {@link Base58}, {@link Bech32} and the {@link PrefixedChecksummedBytes} hierarchy of
+     * This exception is thrown by {@link Base58} and the {@link PrefixedChecksummedBytes} hierarchy of
      * classes when you try to decode data and the checksum isn't valid. You shouldn't allow the user to proceed in this
      * case.
      */
