@@ -2019,6 +2019,7 @@ wire
 wisdom
 wise
 wish
+witness
 wolf
 woman
 wonder
