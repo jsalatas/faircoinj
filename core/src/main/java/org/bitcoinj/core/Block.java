@@ -41,7 +41,7 @@ import static org.bitcoinj.core.Sha256Hash.*;
  *
  * <p>To get a block, you can either build one from the raw bytes you can get from another implementation, or request one
  * specifically using {@link Peer#getBlock(Sha256Hash)}, or grab one from a downloaded {@link BlockChain}.</p>
- * 
+ *
  * <p>Instances of this class are not safe for use by multiple threads.</p>
  */
 public class Block extends Message {
@@ -118,7 +118,7 @@ public class Block extends Message {
 
     protected boolean headerBytesValid;
     protected boolean transactionBytesValid;
-    
+
     // Blocks can be encoded in a way that will use more bytes than is optimal (due to VarInts having multiple encodings)
     // MAX_BLOCK_SIZE must be compared to the optimal encoding, not the actual encoding, so when parsing, we keep track
     // of the size of the ideal encoding in addition to the actual message size (which Message needs)
@@ -244,7 +244,7 @@ public class Block extends Message {
 
     /**
      * Parse transactions from the block.
-     * 
+     *
      * @param transactionsOffset Offset of the transactions within the block.
      * Useful for non-Bitcoin chains where the block header may not be a fixed
      * size.
@@ -438,6 +438,14 @@ public class Block extends Message {
     }
 
     private void writeAdditional(OutputStream stream) throws IOException {
+        // WARNING check if there are additional info.
+        //         If you change this make sure Block.cloneAsHeader() continues to work
+        //         also tests BitcoinSerializerTest.testHeaders1() and BitcoinSerializerTest.testHeaders2()
+        if (chainMultiSig == null && missingSignerIds == null && creatorSignature == null ) {
+            return;
+        }
+
+
         stream.write((chainMultiSig==null? SchnorrSignature.ALL_ZERO : chainMultiSig).getReversedBytes());
 
         if(missingSignerIds != null) {
@@ -1101,7 +1109,7 @@ public class Block extends Message {
     private static int txCounter;
 
     /** Adds a coinbase transaction to the block. This exists for unit tests.
-     * 
+     *
      * @param height block height, if known, or -1 otherwise.
      */
     @VisibleForTesting
@@ -1147,7 +1155,7 @@ public class Block extends Message {
     /**
      * Returns a solved block that builds on top of this one. This exists for unit tests.
      * In this variant you can specify a public key (pubkey) for use in generating coinbase blocks.
-     * 
+     *
      * @param height block height, if known, or -1 otherwise.
      */
     Block createNextBlock(@Nullable final Address to, final long version,
@@ -1249,7 +1257,7 @@ public class Block extends Message {
 
     /**
      * Return whether this block contains any transactions.
-     * 
+     *
      * @return  true if the block contains transactions, false otherwise (is
      * purely a header).
      */

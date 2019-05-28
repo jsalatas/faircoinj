@@ -60,7 +60,6 @@ public class HeadersMessage extends Message {
         stream.write(new VarInt(blockHeaders.size()).encode());
         for (Block header : blockHeaders) {
             header.cloneAsHeader().bitcoinSerializeToStream(stream);
-            stream.write(0);
         }
     }
 
