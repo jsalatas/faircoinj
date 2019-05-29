@@ -17,6 +17,7 @@
 
 package org.bitcoinj.core;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.*;
 import com.google.common.collect.*;
 import com.google.common.util.concurrent.*;
@@ -80,6 +81,8 @@ import static com.google.common.base.Preconditions.*;
 public abstract class AbstractBlockChain {
     private static final Logger log = LoggerFactory.getLogger(AbstractBlockChain.class);
     protected final ReentrantLock lock = Threading.lock("blockchain");
+    private final static List<Sha256Hash> emptySha256List = new ArrayList<>();
+    private final static Map<Sha256Hash, Transaction> emptySha256Map = new HashMap<>();
 
     /** Keeps a map of block hashes to StoredBlocks. */
     private final BlockStore blockStore;
@@ -381,7 +384,25 @@ public abstract class AbstractBlockChain {
                     block.toString(), e);
         }
     }
-    
+
+    @VisibleForTesting
+    boolean addFiltered(Block block) throws VerificationException, PrunedException {
+        try {
+            return add(block, true, emptySha256List, emptySha256Map);
+        } catch (BlockStoreException e) {
+            // TODO: Figure out a better way to propagate this exception to the user.
+            throw new RuntimeException(e);
+        } catch (VerificationException e) {
+            try {
+                notSettingChainHead();
+            } catch (BlockStoreException e1) {
+                throw new RuntimeException(e1);
+            }
+            throw new VerificationException("Could not verify block:\n" +
+                    block.toString(), e);
+        }
+    }
+
     /**
      * Processes a received block and tries to add it to the chain. If there's something wrong with the block an
      * exception is thrown. If the block is OK but cannot be connected to the chain at this time, returns false.
@@ -452,6 +473,7 @@ public abstract class AbstractBlockChain {
                 return true;
             }
             if (tryConnecting && orphanBlocks.containsKey(block.getHash())) {
+                log.warn("Orphans not allowed: {}", block.getHashAsString());
                 return false;
             }
 
@@ -1011,7 +1033,7 @@ public abstract class AbstractBlockChain {
         synchronized (chainHeadLock) {
             long offset = height - chainHead.getHeight();
             long headTime = chainHead.getHeader().getTimeSeconds();
-            long estimated = (headTime * 1000) + (1000L * 60L * 10L * offset);
+            long estimated = (headTime * 1000) + (1000L * NetworkParameters.TARGET_SPACING * offset);
             return new Date(estimated);
         }
     }

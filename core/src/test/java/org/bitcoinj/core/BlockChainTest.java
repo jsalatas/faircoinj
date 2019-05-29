@@ -164,12 +164,6 @@ public class BlockChainTest {
             // The fake chain should seem to be "fast" for the purposes of difficulty calculations.
             Utils.rollMockClock(2);
         }
-        // Now add another block that has no difficulty adjustment, it should be rejected.
-        try {
-            chain.add(prev.createNextBlock(coinbaseTo, 1, Utils.currentTimeSeconds(), UNITTEST.getInterval()));
-            fail();
-        } catch (VerificationException e) {
-        }
         // Create a new block with the right difficulty target given our blistering speed relative to the huge amount
         // of time it's supposed to take (set in the unit test network parameters).
         Block b = prev.createNextBlock(coinbaseTo, 1, Utils.currentTimeSeconds(), UNITTEST.getInterval() + 1);
@@ -178,42 +172,26 @@ public class BlockChainTest {
     }
 
     @Test
-    public void badDifficulty() throws Exception {
+    public void goodBlockBadBlock() throws Exception {
         assertTrue(testNetChain.add(getBlock1()));
         Block b2 = getBlock2();
         assertTrue(testNetChain.add(b2));
-        Block bad = new Block(TESTNET, Block.BLOCK_VERSION_GENESIS);
+        Block bad = new Block(TESTNET, 1);
         // Merkle root can be anything here, doesn't matter.
         bad.setMerkleRoot(Sha256Hash.wrap("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
-        // Nonce was just some number that made the hash < difficulty limit set below, it can be anything.
-        //bad.setNonce(140548933);
         bad.setTime(1279242649);
-        bad.setPrevBlockHash(b2.getHash());
-        // We're going to make this block so easy 50% of solutions will pass, and check it gets rejected for having a
-        // bad difficulty target. Unfortunately the encoding mechanism means we cannot make one that accepts all
-        // solutions.
-        try {
-            testNetChain.add(bad);
-            // The difficulty target above should be rejected on the grounds of being easier than the networks
-            // allowable difficulty.
-            fail();
-        } catch (VerificationException e) {
-            assertTrue(e.getMessage(), e.getCause().getMessage().contains("Difficulty target is bad"));
-        }
+        // set prev block invalid
+        bad.setPrevBlockHash(Sha256Hash.wrap("7958aae3814e825d57a9d948779b0e3e013f3b54dea05d34e2bdbc455a780ef2"));
 
-        // Accept any level of difficulty now.
-        BigInteger oldVal = TESTNET.getMaxTarget();
-        TESTNET.setMaxTarget(new BigInteger("00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16));
-        try {
-            testNetChain.add(bad);
-            // We should not get here as the difficulty target should not be changing at this point.
-            fail();
-        } catch (VerificationException e) {
-            assertTrue(e.getMessage(), e.getCause().getMessage().contains("Unexpected change in difficulty"));
-        }
-        TESTNET.setMaxTarget(oldVal);
+        boolean res = testNetChain.addFiltered(bad);
+        // bad block will not be added
+        // it will end up in orphan blocks
+        assertFalse("Block does not connect", res);
 
-        // TODO: Test difficulty change is not out of range when a transition period becomes valid.
+        // Try to add it again
+        res = testNetChain.add(bad);
+        // orphan blocks are not added
+        assertFalse("Orphans not allowed", res);
     }
 
     private void testDeprecatedBlockVersion(final long deprecatedVersion, final long newVersion)
@@ -373,21 +351,25 @@ public class BlockChainTest {
 
     // Some blocks from the test net.
     private static Block getBlock2() throws Exception {
-        Block b2 = new Block(TESTNET, Block.BLOCK_VERSION_GENESIS);
-        b2.setMerkleRoot(Sha256Hash.wrap("20222eb90f5895556926c112bb5aa0df4ab5abc3107e21a6950aec3b2e3541e2"));
-        b2.setTime(1296688946L);
-        b2.setPrevBlockHash(Sha256Hash.wrap("00000000b873e79784647a6c82962c70d228557d24a747ea4d1b8bbe878e1206"));
-        assertEquals("000000006c02c8ea6e4ff69651f7fcde348fb9d557a06e6957b65552002a7820", b2.getHashAsString());
+        Block b2 = new Block(TESTNET, 1 + Block.TX_PAYLOAD);
+        b2.setMerkleRoot(Sha256Hash.wrap("bcb69fdee1eb11305e07e96843c5a163b7e7e75b46e9a63eb5e871d35bb115bb"));
+        b2.setTime(1503933908L);
+        b2.setCreatorId(0xc001d00dL);
+        b2.setPrevBlockHash(Sha256Hash.wrap("3a59e02288833491bb132d43e815c2eb1d1e7a495134bf2e259aab73abea1a57"));
+        b2.setHashPayload(Sha256Hash.wrap("1e105b32ae21d68abce08f19c4e60558bc0e16f4854c68acc7ec7454de937b06"));
+        assertEquals("9758aae3814e825d57a9d948779b0e3e013f3b54dea05d34e2bdbc455a780ef2", b2.getHashAsString());
         b2.verifyHeader();
         return b2;
     }
 
     private static Block getBlock1() throws Exception {
-        Block b1 = new Block(TESTNET, Block.BLOCK_VERSION_GENESIS);
-        b1.setMerkleRoot(Sha256Hash.wrap("f0315ffc38709d70ad5647e22048358dd3745f3ce3874223c80a7c92fab0c8ba"));
-        b1.setTime(1296688928);
-        b1.setPrevBlockHash(Sha256Hash.wrap("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"));
-        assertEquals("00000000b873e79784647a6c82962c70d228557d24a747ea4d1b8bbe878e1206", b1.getHashAsString());
+        Block b1 = new Block(TESTNET, 1 + Block.TX_PAYLOAD);
+        b1.setMerkleRoot(Sha256Hash.wrap("0c030e46e58113574dd63b8d36d56ff915ac3b700e25346d10b8d875a1440e3b"));
+        b1.setTime(1503933788);
+        b1.setCreatorId(0xc001d00dL);
+        b1.setPrevBlockHash(Sha256Hash.wrap("42327d5edf3cbb75bb139ec78bd62e517f14d7cbad451e4778741b6b4c1dfbc6"));
+        b1.setHashPayload(Sha256Hash.wrap("bc2ad0f58b6ba36fabc20702a1fd54717071bb7737088e748a6a00565ff00ff0"));
+        assertEquals("3a59e02288833491bb132d43e815c2eb1d1e7a495134bf2e259aab73abea1a57", b1.getHashAsString());
         b1.verifyHeader();
         return b1;
     }
@@ -395,9 +377,9 @@ public class BlockChainTest {
     @Test
     public void estimatedBlockTime() throws Exception {
         BlockChain prod = new BlockChain(new Context(MAINNET), new MemoryBlockStore(MAINNET));
-        Date d = prod.estimateBlockTime(200000);
-        // The actual date of block 200,000 was 2012-09-22 10:47:00
-        assertEquals(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US).parse("2012-10-23T08:35:05.000-0700"), d);
+        Date d = prod.estimateBlockTime(100000);
+        // The actual date of block 100,000 was 2018-02-12 08:54:18
+        assertEquals(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US).parse("2018-02-11T08:00:00.000-0800"), d);
     }
 
     @Test
