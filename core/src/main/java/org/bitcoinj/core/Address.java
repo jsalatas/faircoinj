@@ -43,7 +43,7 @@ public abstract class Address extends PrefixedChecksummedBytes {
      *            the expected network this address is valid for, or null if the network should be derived from the
      *            textual form
      * @param str
-     *            the textual form of the address, such as "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL" or
+     *            the textual form of the address, such as "fLsJC1Njap5NxSArYr5wCJbKBbTQfWikY6" or
      *            "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"
      * @return constructed address
      * @throws AddressFormatException
