@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/jsalatas/faircoinj.svg?branch=v-015.1-fc-fix-tests)](https://travis-ci.org/jsalatas/faircoinj)
+
 ### Welcome to faircoinj
 
 The faircoinj library is a Java implementation of the Bitcoin protocol, which allows it to maintain a wallet and send/receive transactions without needing a local copy of Bitcoin Core. It comes with full documentation and some example apps showing how to use it.
