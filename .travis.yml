@@ -1,4 +1,4 @@
-# configuration for https://travis-ci.org/bitcoinj/bitcoinj
+# configuration for https://travis-ci.org/jsalatas/faircoinj
 sudo: false
 dist: xenial
 language: java
@@ -11,5 +11,5 @@ script:
 
 notifications:
   irc:
-    channels: "irc.freenode.net#bitcoinj"
+    channels: "irc.freenode.net#faircoinj"
     skip_join: true
