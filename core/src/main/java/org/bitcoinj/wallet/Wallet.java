@@ -484,6 +484,7 @@ public class Wallet extends BaseTaggableObject
         addTransactionSigner(new LocalTransactionSigner());
         createTransientState();
         fairCoin1Upgrade = false;
+        version = WalletProtobufSerializer.CURRENT_WALLET_VERSION;
     }
 
     private void createTransientState() {
