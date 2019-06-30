@@ -121,7 +121,9 @@ public class Transaction extends ChildMessage {
      * This is calculated by assuming a standard output will be 34 bytes, and then using the formula used in
      * {@link TransactionOutput#getMinNonDustValue(Coin)}.
      */
-    public static final Coin MIN_NONDUST_OUTPUT = Coin.valueOf(800000); // 0.008 FAIR
+    // TODO: I changed the value deliberately, regardless the current value in blockchain
+    //  See https://gist.github.com/jsalatas/e1464a3c3364de525d375ae960bfd7ad
+    public static final Coin MIN_NONDUST_OUTPUT = Coin.valueOf(15160000); // 0.001516 FAIR
 
     // These are bitcoin serialized.
     private long version;
