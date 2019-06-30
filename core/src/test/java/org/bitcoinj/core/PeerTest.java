@@ -96,7 +96,7 @@ public class PeerTest extends TestWithNetworkConnections {
     }
 
     private void connect() throws Exception {
-        connectWithVersion(70001, VersionMessage.NODE_NETWORK);
+        connectWithVersion(92000, VersionMessage.NODE_NETWORK);
     }
 
     private void connectWithVersion(int version, int flags) throws Exception {
@@ -113,7 +113,6 @@ public class PeerTest extends TestWithNetworkConnections {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void chainDownloadEnd2End() throws Exception {
         // A full end-to-end test of the chain download process, with a new block being solved in the middle.
         Block b1 = createFakeBlock(blockStore, Block.BLOCK_HEIGHT_GENESIS).block;
@@ -189,7 +188,6 @@ public class PeerTest extends TestWithNetworkConnections {
 
     // Check that an inventory tickle is processed correctly when downloading missing blocks is active.
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void invTickle() throws Exception {
         connect();
 
@@ -216,7 +214,6 @@ public class PeerTest extends TestWithNetworkConnections {
 
     // Check that an inv to a peer that is not set to download missing blocks does nothing.
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void invNoDownload() throws Exception {
         // Don't download missing blocks.
         peer.setDownloadData(false);
@@ -239,7 +236,6 @@ public class PeerTest extends TestWithNetworkConnections {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void invDownloadTx() throws Exception {
         connect();
 
@@ -264,7 +260,6 @@ public class PeerTest extends TestWithNetworkConnections {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void invDownloadTxMultiPeer() throws Exception {
         // Check co-ordination of which peer to download via the memory pool.
         VersionMessage ver = new VersionMessage(UNITTEST, 100);
@@ -272,7 +267,7 @@ public class PeerTest extends TestWithNetworkConnections {
         Peer peer2 = new Peer(UNITTEST, ver, new PeerAddress(UNITTEST, address), blockChain);
         peer2.addWallet(wallet);
         VersionMessage peerVersion = new VersionMessage(UNITTEST, OTHER_PEER_CHAIN_HEIGHT);
-        peerVersion.clientVersion = 70001;
+        peerVersion.clientVersion = 92000;
         peerVersion.localServices = VersionMessage.NODE_NETWORK;
 
         connect();
@@ -301,7 +296,6 @@ public class PeerTest extends TestWithNetworkConnections {
 
     // Check that inventory message containing blocks we want is processed correctly.
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void newBlock() throws Exception {
         Block b1 = createFakeBlock(blockStore, Block.BLOCK_HEIGHT_GENESIS).block;
         blockChain.add(b1);
@@ -363,7 +357,6 @@ public class PeerTest extends TestWithNetworkConnections {
 
     // Check that it starts downloading the block chain correctly on request.
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void startBlockChainDownload() throws Exception {
         Block b1 = createFakeBlock(blockStore, Block.BLOCK_HEIGHT_GENESIS).block;
         blockChain.add(b1);
@@ -392,7 +385,6 @@ public class PeerTest extends TestWithNetworkConnections {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void getBlock() throws Exception {
         connect();
 
@@ -415,7 +407,6 @@ public class PeerTest extends TestWithNetworkConnections {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void getLargeBlock() throws Exception {
         connect();
 
@@ -441,7 +432,6 @@ public class PeerTest extends TestWithNetworkConnections {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void fastCatchup() throws Exception {
         connect();
         Utils.setMockClock();
@@ -524,7 +514,6 @@ public class PeerTest extends TestWithNetworkConnections {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void recursiveDependencyDownloadDisabled() throws Exception {
         peer.setDownloadTxDependencies(false);
         connect();
@@ -543,7 +532,6 @@ public class PeerTest extends TestWithNetworkConnections {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void recursiveDependencyDownload() throws Exception {
         connect();
         // Check that we can download all dependencies of an unconfirmed relevant transaction from the mempool.
@@ -641,7 +629,6 @@ public class PeerTest extends TestWithNetworkConnections {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void recursiveDependencyDownload_depthLimited() throws Exception {
         peer.setDownloadTxDependencies(1); // Depth limit
         connect();
@@ -693,9 +680,8 @@ public class PeerTest extends TestWithNetworkConnections {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void timeLockedTransactionNew() throws Exception {
-        connectWithVersion(70001, VersionMessage.NODE_NETWORK);
+        connectWithVersion(92000, VersionMessage.NODE_NETWORK);
         // Test that if we receive a relevant transaction that has a lock time, it doesn't result in a notification
         // until we explicitly opt in to seeing those.
         Wallet wallet = new Wallet(UNITTEST);
@@ -734,7 +720,6 @@ public class PeerTest extends TestWithNetworkConnections {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void rejectTimeLockedDependency() throws Exception {
         // Check that we also verify the lock times of dependencies. Otherwise an attacker could still build a tx that
         // looks legitimate and useful but won't actually ever confirm, by sending us a normal tx that spends a
@@ -743,14 +728,13 @@ public class PeerTest extends TestWithNetworkConnections {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void acceptTimeLockedDependency() throws Exception {
         checkTimeLockedDependency(true);
     }
 
     private void checkTimeLockedDependency(boolean shouldAccept) throws Exception {
         // Initial setup.
-        connectWithVersion(70001, VersionMessage.NODE_NETWORK);
+        connectWithVersion(92000, VersionMessage.NODE_NETWORK);
         Wallet wallet = new Wallet(UNITTEST);
         ECKey key = wallet.freshReceiveKey();
         wallet.setAcceptRiskyTransactions(shouldAccept);
@@ -836,7 +820,6 @@ public class PeerTest extends TestWithNetworkConnections {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void exceptionListener() throws Exception {
         wallet.addCoinsReceivedEventListener(new WalletCoinsReceivedEventListener() {
             @Override
@@ -878,7 +861,6 @@ public class PeerTest extends TestWithNetworkConnections {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void getUTXOs() throws Exception {
         // Basic test of support for BIP 64: getutxos support. The Lighthouse unit tests exercise this stuff more
         // thoroughly.

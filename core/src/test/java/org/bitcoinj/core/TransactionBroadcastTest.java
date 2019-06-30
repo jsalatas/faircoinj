@@ -64,7 +64,6 @@ public class TransactionBroadcastTest extends TestWithPeerGroup {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void fourPeers() throws Exception {
         InboundMessageQueuer[] channels = { connectPeer(1), connectPeer(2), connectPeer(3), connectPeer(4) };
         Transaction tx = FakeTxBuilder.createFakeTx(UNITTEST);
@@ -105,7 +104,6 @@ public class TransactionBroadcastTest extends TestWithPeerGroup {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void lateProgressCallback() throws Exception {
         // Check that if we register a progress callback on a broadcast after the broadcast has started, it's invoked
         // immediately with the latest state. This avoids API users writing accidentally racy code when they use
@@ -127,7 +125,6 @@ public class TransactionBroadcastTest extends TestWithPeerGroup {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void rejectHandling() throws Exception {
         InboundMessageQueuer[] channels = { connectPeer(0), connectPeer(1), connectPeer(2), connectPeer(3), connectPeer(4) };
         Transaction tx = FakeTxBuilder.createFakeTx(UNITTEST);
@@ -149,7 +146,6 @@ public class TransactionBroadcastTest extends TestWithPeerGroup {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void retryFailedBroadcast() throws Exception {
         // If we create a spend, it's sent to a peer that swallows it, and the peergroup is removed/re-added then
         // the tx should be broadcast again.
@@ -186,7 +182,6 @@ public class TransactionBroadcastTest extends TestWithPeerGroup {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void peerGroupWalletIntegration() throws Exception {
         // Make sure we can create spends, and that they are announced. Then do the same with offline mode.
 

@@ -102,7 +102,6 @@ public class PeerGroupTest extends TestWithPeerGroup {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void listener() throws Exception {
         peerGroup.addConnectedEventListener(connectedListener);
         peerGroup.addDisconnectedEventListener(disconnectedListener);
@@ -198,7 +197,6 @@ public class PeerGroupTest extends TestWithPeerGroup {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void receiveTxBroadcast() throws Exception {
         // Check that when we receive transactions on all our peers, we do the right thing.
         peerGroup.start();
@@ -238,7 +236,6 @@ public class PeerGroupTest extends TestWithPeerGroup {
 
     
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void receiveTxBroadcastOnAddedWallet() throws Exception {
         // Check that when we receive transactions on all our peers, we do the right thing.
         peerGroup.start();
@@ -273,7 +270,6 @@ public class PeerGroupTest extends TestWithPeerGroup {
     }
     
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void singleDownloadPeer1() throws Exception {
         // Check that we don't attempt to retrieve blocks on multiple peers.
         peerGroup.start();
@@ -315,7 +311,6 @@ public class PeerGroupTest extends TestWithPeerGroup {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void singleDownloadPeer2() throws Exception {
         // Check that we don't attempt multiple simultaneous block chain downloads, when adding a new peer in the
         // middle of an existing chain download.
@@ -352,7 +347,6 @@ public class PeerGroupTest extends TestWithPeerGroup {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void transactionConfidence() throws Exception {
         // Checks that we correctly count how many peers broadcast a transaction, so we can establish some measure of
         // its trustworthyness assuming an untampered with internet connection.
@@ -613,7 +607,6 @@ public class PeerGroupTest extends TestWithPeerGroup {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void testBloomOnP2Pubkey() throws Exception {
         // Cover bug 513. When a relevant transaction with a p2pubkey output is found, the Bloom filter should be
         // recalculated to include that transaction hash but not re-broadcast as the remote nodes should have followed
@@ -646,7 +639,6 @@ public class PeerGroupTest extends TestWithPeerGroup {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void testBloomResendOnNewKey() throws Exception {
         // Check that when we add a new key to the wallet, the Bloom filter is re-calculated and re-sent but only once
         // we exceed the lookahead threshold.
@@ -679,7 +671,6 @@ public class PeerGroupTest extends TestWithPeerGroup {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void waitForNumPeers1() throws Exception {
         ListenableFuture<List<Peer>> future = peerGroup.waitForPeers(3);
         peerGroup.start();
@@ -720,15 +711,14 @@ public class PeerGroupTest extends TestWithPeerGroup {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void waitForPeersWithServiceFlags() throws Exception {
         ListenableFuture<List<Peer>> future = peerGroup.waitForPeersWithServiceMask(2, 3);
 
         VersionMessage ver1 = new VersionMessage(UNITTEST, 10);
-        ver1.clientVersion = 70000;
+        ver1.clientVersion = 92000;
         ver1.localServices = VersionMessage.NODE_NETWORK;
         VersionMessage ver2 = new VersionMessage(UNITTEST, 10);
-        ver2.clientVersion = 70000;
+        ver2.clientVersion = 92000;
         ver2.localServices = VersionMessage.NODE_NETWORK | 2;
         peerGroup.start();
         assertFalse(future.isDone());
@@ -783,7 +773,6 @@ public class PeerGroupTest extends TestWithPeerGroup {
     }
 
     @Test
-    @Ignore("Test get stuck. Temporary ignore.")
     public void autoRescanOnKeyExhaustion() throws Exception {
         // Check that if the last key that was inserted into the bloom filter is seen in some requested blocks,
         // that the exhausting block is discarded, a new filter is calculated and sent, and then the download resumes.
