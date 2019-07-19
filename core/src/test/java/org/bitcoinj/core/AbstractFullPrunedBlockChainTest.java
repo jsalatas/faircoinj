@@ -173,12 +173,12 @@ public abstract class AbstractFullPrunedBlockChainTest {
         int height = 1;
 
         // Build some blocks on genesis block to create a spendable output
-        Block rollingBlock = PARAMS.getGenesisBlock().createNextBlockWithCoinbase(Block.BLOCK_VERSION_GENESIS, outKey.getPubKey(), height++);
+        Block rollingBlock = PARAMS.getGenesisBlock().createNextBlockWithCoinbase(1 + Block.TX_PAYLOAD, outKey.getPubKey(), height++);
         chain.add(rollingBlock);
         TransactionOutPoint spendableOutput = new TransactionOutPoint(PARAMS, 0, rollingBlock.getTransactions().get(0).getTxId());
         byte[] spendableOutputScriptPubKey = rollingBlock.getTransactions().get(0).getOutputs().get(0).getScriptBytes();
         for (int i = 1; i < PARAMS.getSpendableCoinbaseDepth(); i++) {
-            rollingBlock = rollingBlock.createNextBlockWithCoinbase(Block.BLOCK_VERSION_GENESIS, outKey.getPubKey(), height++);
+            rollingBlock = rollingBlock.createNextBlockWithCoinbase(1 + Block.TX_PAYLOAD, outKey.getPubKey(), height++);
             chain.add(rollingBlock);
         }
         
@@ -216,11 +216,14 @@ public abstract class AbstractFullPrunedBlockChainTest {
             store.close();
         } catch (Exception e) {}
     }
-    
+
+    // jsalatas: I deliberately increased it from 100k to 500k in
+    // order to include block 161 where the initial distribution
+    // happened
     @Test
-    public void testFirst100KBlocks() throws Exception {
+    public void testFirst500KBlocks() throws Exception {
         Context context = new Context(MAINNET);
-        File blockFile = new File(getClass().getResource("first-100k-blocks.dat").getFile());
+        File blockFile = new File(getClass().getResource("first-500k-blocks.dat").getFile());
         BlockFileLoader loader = new BlockFileLoader(MAINNET, Arrays.asList(blockFile));
 
         store = createStore(MAINNET, 10);

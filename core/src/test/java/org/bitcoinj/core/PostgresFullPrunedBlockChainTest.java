@@ -62,11 +62,11 @@ public class PostgresFullPrunedBlockChainTest extends AbstractFullPrunedBlockCha
     }
 
     @Test
-    public void testFirst100kBlocksWithCustomSchema() throws Exception {
+    public void testFirst500kBlocksWithCustomSchema() throws Exception {
         boolean oldSchema = useSchema;
         useSchema = true;
         try {
-            super.testFirst100KBlocks();
+            super.testFirst500KBlocks();
         } finally {
             useSchema = oldSchema;
         }
