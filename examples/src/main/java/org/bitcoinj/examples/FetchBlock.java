@@ -22,6 +22,7 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.bitcoinj.core.*;
 import org.bitcoinj.net.discovery.DnsDiscovery;
+import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.MemoryBlockStore;
@@ -32,6 +33,8 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Future;
 
@@ -57,10 +60,10 @@ public class FetchBlock {
                 parser.printHelpOn(System.out);
                 return;
             }
-            nonOpts = (List<String>) opts.nonOptionArguments();
-            if (nonOpts.size() != 1) {
-                throw new IllegalArgumentException("Incorrect number of block hash, please provide only one block hash.");
-            }
+//            nonOpts = (List<String>) opts.nonOptionArguments();
+//            if (nonOpts.size() != 1) {
+//                throw new IllegalArgumentException("Incorrect number of block hash, please provide only one block hash.");
+//            }
         } catch (OptionException | IllegalArgumentException e) {
             System.err.println(e.getMessage());
             System.err.println("usage: org.bitcoinj.examples.FetchBlock [--localhost] <blockHash>");
@@ -70,7 +73,7 @@ public class FetchBlock {
 
         // Connect to testnet and find a peer
         System.out.println("Connecting to node");
-        final NetworkParameters params = TestNet3Params.get();
+        final NetworkParameters params = MainNetParams.get();
         BlockStore blockStore = new MemoryBlockStore(params);
         BlockChain chain = new BlockChain(params, blockStore);
         PeerGroup peerGroup = new PeerGroup(params, chain);
@@ -85,15 +88,28 @@ public class FetchBlock {
         Peer peer = peerGroup.getConnectedPeers().get(0);
 
         // Retrieve a block through a peer
-        Sha256Hash blockHash = Sha256Hash.wrap(nonOpts.get(0));
-        Future<Block> future = peer.getBlock(blockHash);
-        System.out.println("Waiting for node to send us the requested block: " + blockHash);
-        Block block = future.get();
-        System.out.println(block);
+        Sha256Hash blockHash = Sha256Hash.wrap("c50421249125ee5cf08c5f7fcc6e2124c625bb8ac59200a8df187a85d02b2b6b");
+        List<Block> blocks = new ArrayList<>();
+        while (!blockHash.equals(params.getGenesisBlock().getHash())) {
+            Future<Block> future = peer.getBlock(blockHash);
+            System.out.println("Waiting for node to send us the requested block: " + blockHash);
+            Block block = future.get();
 
-        File file = new File("/tmp/serialized");
+            blocks.add(block);
+
+            blockHash = block.getPrevBlockHash();
+        }
+        //System.out.println(block);
+
+
+        // reverse blocks (first should be genesis block)
+        Collections.reverse(blocks);
+
+        File file = new File("/home/john/projects/faircoin/faircoinj/core/src/test/resources/org/bitcoinj/core/first-500k-blocks.dat");
         OutputStream output = new FileOutputStream(file);
-        block.bitcoinSerialize(output);
+        for(Block block: blocks) {
+            block.bitcoinSerialize(output);
+        }
         output.flush();
         output.close();
 
