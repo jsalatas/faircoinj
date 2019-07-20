@@ -1172,6 +1172,7 @@ public class FullBlockTestGenerator {
 
             for (Transaction transaction : b64Original.block.getTransactions())
                 transaction.bitcoinSerialize(stream);
+            b64Original.block.writeAdditional(stream);
             b64 = params.getSerializer(true).makeBlock(stream.toByteArray(), stream.size());
 
             // The following checks are checking to ensure block serialization functions in the way needed for this test
@@ -1179,7 +1180,10 @@ public class FullBlockTestGenerator {
             checkState(stream.size() == b64Original.block.getMessageSize() + 8);
             checkState(stream.size() == b64.getMessageSize());
             checkState(Arrays.equals(stream.toByteArray(), b64.bitcoinSerialize()));
-            checkState(b64.getOptimalEncodingMessageSize() == b64Original.block.getMessageSize());
+            // jsalatas: this might be wrong. I'm adding 129, the minimum additional info size (see @Block.writeAdditional)
+            int optimalSize = b64.getOptimalEncodingMessageSize() +  129;
+            int messageSize = b64Original.block.getMessageSize();
+            checkState(optimalSize == messageSize);
         }
         blocks.add(new BlockAndValidity(b64, true, false, b64.getHash(), chainHeadHeight + 19, "b64"));
         spendableOutputs.offer(b64Original.getCoinbaseOutput());

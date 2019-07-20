@@ -437,7 +437,8 @@ public class Block extends Message {
         }
     }
 
-    private void writeAdditional(OutputStream stream) throws IOException {
+    // default for testing
+    void writeAdditional(OutputStream stream) throws IOException {
         // WARNING check if there are additional info.
         //         If you change this make sure Block.cloneAsHeader() continues to work
         //         also tests BitcoinSerializerTest.testHeaders1() and BitcoinSerializerTest.testHeaders2()
