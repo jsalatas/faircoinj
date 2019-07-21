@@ -108,7 +108,11 @@ public class Transaction extends ChildMessage {
     /**
      * If feePerKb is lower than this, Bitcoin Core will treat it as if there were no fee.
      */
-    public static final Coin REFERENCE_DEFAULT_MIN_TX_FEE = Coin.valueOf(800000); // 0.008 FAIR
+    // jsalatas: the value 277656 is completely arbitrary.
+    // It just keeps
+    // @PaymentChannelStateTest#setupDoS and @TransactionOutputTest#getMinNonDustValue
+    // happy
+    public static final Coin REFERENCE_DEFAULT_MIN_TX_FEE = Coin.valueOf(277656); // 0.00277656 FAIR
 
     /**
      * If using this feePerKb, transactions will get confirmed within the next couple of blocks.
